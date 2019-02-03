@@ -36,17 +36,21 @@ def imgDetect(file):
 	upper = np.array([77,80,50], dtype='uint8')
 	mask = cv2.inRange(hsv, lower, upper)
 	#filtered = cv2.bitwise_and(frame, frame, mask=mask)
-	blur = cv2.GaussianBlur(gray, (3,3), 2)
+	blur = cv2.GaussianBlur(gray, (3,3), 3)
+	thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,\
+            cv2.THRESH_BINARY, 7, 2)
 	#thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 21, 5)
-	canny = cv2.Canny(blur, 10, 80)
+	canny = cv2.Canny(thresh, 15, 70)
 	#img, contours, hierarchy = cv2.findContours(canny.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 	img = frame.copy()
 	myContours = getContours(canny)
 	sortedContours = sorted(myContours, key=lambda x: x.area)
+	center = (0,0)
 	if len(sortedContours) > 1:
 		a,b = sortedContours[-1], sortedContours[-2]
 		x,y = (a.x+b.x+a.w//2+b.w//2)//2, (a.y+b.y+a.h//2+b.h//2)//2
-		cv2.circle(img, (x,y), radius=5, color=(0,255,0), thickness=2)
+		center = (x,y)
+		#cv2.circle(img, (x,y), radius=5, color=(0,255,0), thickness=2)
 		#cv2.putText(img, "Center Point", (x,y-10), 2, 0.5, (0,0,0))
 	# for cnt in sortedContours[:-2]:
 	# 	cv2.rectangle(img, (cnt.x, cnt.y), (cnt.x+cnt.w, cnt.y+cnt.h), (0,0,255), 2)
@@ -56,21 +60,30 @@ def imgDetect(file):
 	if isinstance(file, str):
 		cv2.imshow('Frame', frame)
 		cv2.imshow('HSV', hsv)
+		cv2.imshow('Thresh', thresh)
 		#cv2.imshow('Mask', mask)
 		cv2.imshow('Canny', canny)
 		cv2.imshow('Output', img)
 		cv2.waitKey(0)
-	return img
+	return img, center
 
 def videoDetect(file):
 	vid = cv2.VideoCapture(file)
 	frames = 0
 	FPS = 30
+	avgLength = 10
 	saver = cv2.VideoWriter('gateDetectionVideo.avi', cv2.VideoWriter_fourcc(*'MJPG'), 30, (640,360))
+	centers = []
 	while vid.isOpened():
 		start = time.time()
 		ret, frame = vid.read()
-		img = imgDetect(frame)
+		img, center = imgDetect(frame)
+		if center != (0,0):
+			centers.append(center)
+			if len(centers) > avgLength:
+				centers.pop(0) 
+			x, y = int(np.mean(np.array(centers)[:,0])), int(np.mean(np.array(centers)[:,1]))
+			cv2.circle(img, (x,y), radius=5, color=(0,255,0), thickness=2)
 		frames += 1
 		# print(frames)
 		# if frames == 500:
