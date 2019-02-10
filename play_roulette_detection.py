@@ -12,7 +12,7 @@ tracking = False # Use trackers to try to accomodate for failure
 tracker_num = 5 # The tracker to use
 testing = False # Show hsv sliders and threshold image.
 
-detection_interval = 10 # If tracking
+detection_interval = 10 # If tracking, max time until using detection algorithm to center the result
 fail_thresh = 5 # Number of detection failures before rectangle disappears from output
 close_thresh = 30 # Pixel threshold used to reject dissimilar consecutive detection results
 roulette_size_thresh = 50 # Minimum area of detected roulette slot
@@ -24,8 +24,12 @@ h_low = 96
 s_low = 82
 v_low = 131
 h_hi = 190
-s_hi = 180 #208
+s_hi = 180
 v_hi = 228
+
+#############################################
+# Helper methods
+#############################################
 
 def nothing(x):
     """Helper method for the trackbar"""
@@ -152,6 +156,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 0:
         if "test" in sys.argv:
             testing = True
+            # Initialize trackbars for hsv threshold testing
             cv2.namedWindow('contours')
             cv2.createTrackbar('h_low','contours',h_low,255,nothing)
             cv2.createTrackbar('s_low','contours',s_low,255,nothing)
@@ -208,6 +213,7 @@ if __name__ == "__main__":
                     roulette_hole = (bounding_box[:2], bounding_box[2:4], roulette_hole[2])
                 else:
                     num_failures += 1
+                    
             if num_failures > fail_thresh:
                 roulette_hole = None
                 detecting = True
@@ -218,7 +224,6 @@ if __name__ == "__main__":
                 box = np.int0(cv2.boxPoints(roulette_hole))
                 roulette_img = cv2.drawContours(roulette_img, [box], 0, (0,255,0), 2)
             cv2.imshow("roulette hole", roulette_img)
-
 
             time_since_detection += 1
             k = cv2.waitKey(60) & 0xff
