@@ -2,11 +2,8 @@ import numpy as np
 import cv2
 import sys
 
-#### TODO: maybe look into pattern matching
-
 # Data fron the new course footage dropbox folder
 cap = cv2.VideoCapture('../data/course_footage/path_marker_GOPR1142.mp4')
-path_marker_template = cv2.imread('../data/patterns/path_marker_tip.png')
 
 ##################################################################################
 #
@@ -93,45 +90,6 @@ def hsv_threshold(frame, thresh_used, tries=0):
             thresh_used[0] -= 1
             thresh_used, res = hsv_threshold(frame, thresh_used, tries+1)
     return thresh_used, res
-
-def filter_for_rectangles(contours):
-    rects = []
-    for c in contours:
-        peri = cv2.arcLength(c, True)
-        approx = cv2.approxPolyDP(c, 0.1 * peri, True)
-        if len(approx) == 4 or len(approx) == 8:
-            rects.append(c)
-    return rects
-
-def close_to(rect1, rect2, threshold):
-    ### returns whether rect1 is close to rect2 based on threshold
-    if rect1 is None:
-        return True
-    dx, dy = rect1[0][0]-rect2[0][0], rect1[0][1]-rect2[0][1];
-    return dx**2 + dy**2 < threshold * threshold
-
-def init_tracker(tracker_num):
-    # tracker_types: ['BOOSTING', 'MIL','KCF', 'TLD', 'MEDIANFLOW', 'GOTURN', 'MOSSE', 'CSRT']
-    if tracker_num == 1:
-        tracker = cv2.TrackerBoosting_create()
-    elif tracker_num == 2:
-        tracker = cv2.TrackerMIL_create()
-    elif tracker_num == 3:
-        tracker = cv2.TrackerKCF_create()
-    elif tracker_num == 4:
-        tracker = cv2.TrackerTLD_create()
-    elif tracker_num == 5:
-        tracker = cv2.TrackerMedianFlow_create()
-    elif tracker_num == 6:
-        tracker = cv2.TrackerGOTURN_create()
-    elif tracker_num == 7:
-        tracker = cv2.TrackerMOSSE_create()
-    elif tracker_num == 8:
-        tracker = cv2.TrackerCSRT_create()
-    else:
-        print("Invalid tracker number")
-        exit()
-    return tracker
 #
 #
 ##################################################################################
