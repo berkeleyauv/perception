@@ -40,7 +40,7 @@ def imgDetect(file):
 	thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,\
             cv2.THRESH_BINARY, 7, 2)
 	#thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 21, 5)
-	canny = cv2.Canny(thresh, 15, 70)
+	canny = cv2.Canny(blur, 20, 70)
 	#img, contours, hierarchy = cv2.findContours(canny.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 	img = frame.copy()
 	myContours = getContours(canny)
@@ -68,6 +68,8 @@ def imgDetect(file):
 	return img, center
 
 def videoDetect(file):
+	#file = "D:/Documents/College Work/AUV/vision-testing" + file
+	print("File name is: " + file)
 	vid = cv2.VideoCapture(file)
 	frames = 0
 	FPS = 30
@@ -77,6 +79,10 @@ def videoDetect(file):
 	while vid.isOpened():
 		start = time.time()
 		ret, frame = vid.read()
+		if frame is None:
+			continue
+		h, w, d = frame.shape
+		frame = cv2.resize(frame, (w//2, h//2))
 		img, center = imgDetect(frame)
 		if center != (0,0):
 			centers.append(center)
@@ -90,7 +96,7 @@ def videoDetect(file):
 		# 	cv2.imwrite('test.png', frame)
 		cv2.imshow('Frame', frame)
 		cv2.imshow('Output', img)
-		saver.write(img)
+		#saver.write(img)
 		end = time.time()
 		if (cv2.waitKey(1) & 0xFF) == ord('q') or frames > 900:
 			break
@@ -121,6 +127,7 @@ def getContours(image):
 		if area > 100 and area < 10000 and h>w+10:
 			rectContour.append(Contour(x,y,w,h, cv2.contourArea(cn)))
 			cv2.rectangle(limited, (x,y), (x+w, y+h), 1, 1)
+
 	#cv2.imshow('Contours', blur)
 	#cv2.imwrite('allContours.jpg', contourImg)
 	#contourImg = Image.fromarray(contourImg)
@@ -185,7 +192,7 @@ ap.add_argument('--test', '-t', action='store_true')
 
 if __name__ == '__main__':
 	args = ap.parse_args()
-	if args.file_name.endswith('.mp4'):
+	if args.file_name.lower().endswith('.mp4'):
 		videoDetect(args.file_name)
 	else:
 		imgDetect(args.file_name)
