@@ -5,31 +5,27 @@ import sys
 #### TODO: maybe look into pattern matching
 
 # Data fron the new course footage dropbox folder
-cap = cv2.VideoCapture('../data/course_footage/play_roulette_GOPR1143.mp4')
+cap = cv2.VideoCapture('../data/course_footage/play_slots_GOPR1142.mp4')
 
 detecting = True # Use hsv thresholding and rectangle detection. Always True
 tracking = False # Use trackers to try to accomodate for failure
 tracker_num = 5 # The tracker to use
 testing = False # Show hsv sliders and threshold image.
 
-detection_interval = 10 # If tracking, max time until using detection algorithm to center the result
+detection_interval = 10 # If tracking
 fail_thresh = 5 # Number of detection failures before rectangle disappears from output
 close_thresh = 30 # Pixel threshold used to reject dissimilar consecutive detection results
-roulette_size_thresh = 50 # Minimum area of detected roulette slot
-roulette_dimension_thresh = 0.3 # Slot result's maximum % deviation from expected width height ratio
+slots_size_thresh = 50 # Minimum area of detected slots slot
+slots_dimension_thresh = 0.3 # Slot result's maximum % deviation from expected width height ratio
 
 # HSV threshold values. Can be changed during runtime if testing
-# Use python3 play_roulette_detection test to open testing mode
+# Use python3 play_slots_detection test to open testing mode
 h_low = 96
 s_low = 82
 v_low = 131
 h_hi = 190
 s_hi = 180
 v_hi = 228
-
-#############################################
-# Helper methods
-#############################################
 
 def nothing(x):
     """Helper method for the trackbar"""
@@ -66,13 +62,15 @@ def hsv_threshold(frame, _h_low, s_low, v_low, h_hi, s_hi, v_hi, tries=0):
     hsv = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv, np.array([h_low,s_low,v_low]), np.array([h_hi,s_hi,v_hi]))
     res = cv2.bitwise_and(frame,frame, mask= mask)
+
+    # Threshold depend on whether the sub is close to or far from the target
     if tries < 3:
         if np.count_nonzero(res) > res.shape[0]*res.shape[1] * 0.02:
             # narrow the threshold and retry
             h_low += 1
             res = hsv_threshold(frame, h_low, s_low, v_low, h_hi, s_hi, v_hi, tries+1)
         if np.count_nonzero(res) < res.shape[0]*res.shape[1] * 0.005:
-            # narrow the threshold and retry
+            # widen the threshold and retry
             h_low -= 1
             res = hsv_threshold(frame, h_low, s_low, v_low, h_hi, s_hi, v_hi, tries+1)
     return res
@@ -86,11 +84,11 @@ def filter_for_rectangles(contours):
             rects.append(c)
     return rects
 
-def find_red_roulette_hole(frame, size_thresh, dimension_thresh):
+def find_red_slots_hole(frame, size_thresh, dimension_thresh):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     edges = cv2.Canny(gray, 100, 150)
 
-    contours, hierarchy = cv2.findContours(edges,cv2.RETR_CCOMP,cv2.CHAIN_APPROX_SIMPLE)
+    im, contours, hierarchy = cv2.findContours(edges,cv2.RETR_CCOMP,cv2.CHAIN_APPROX_SIMPLE)
 
     def get_area(rect):
         return rect[1][0] * rect[1][1]
@@ -104,7 +102,7 @@ def find_red_roulette_hole(frame, size_thresh, dimension_thresh):
     # contours = filter_for_rectangles(contours) # Makes it worse right now lol
 
     # Take the first few contours and find the one that fits the dimensions the best
-    # 5x7 for the play slots rectangle
+    # The play slots rectangle is square
     contours = [cv2.minAreaRect(c) for c in contours]
     contours = [c for c in contours if get_area(c) > size_thresh]
 
@@ -156,7 +154,6 @@ if __name__ == "__main__":
     if len(sys.argv) > 0:
         if "test" in sys.argv:
             testing = True
-            # Initialize trackbars for hsv threshold testing
             cv2.namedWindow('contours')
             cv2.createTrackbar('h_low','contours',h_low,255,nothing)
             cv2.createTrackbar('s_low','contours',s_low,255,nothing)
@@ -166,7 +163,7 @@ if __name__ == "__main__":
             cv2.createTrackbar('v_high','contours',v_hi,255,nothing)
 
     tracker = init_tracker(tracker_num)
-    roulette_hole = None
+    slots_hole = None
     num_failures = 0
     time_since_detection = 0
 
@@ -188,42 +185,42 @@ if __name__ == "__main__":
 
             if detecting and tracking:
                 hsv_thresh = hsv_threshold(frame, h_low, s_low, v_low, h_hi, s_hi, v_hi)
-                new_roulette_hole = find_red_roulette_hole(hsv_thresh, roulette_size_thresh, roulette_dimension_thresh)
-                if new_roulette_hole is not None and close_to(roulette_hole, new_roulette_hole, close_thresh):
+                new_slots_hole = find_red_slots_hole(hsv_thresh, slots_size_thresh, slots_dimension_thresh)
+                if new_slots_hole is not None and close_to(slots_hole, new_slots_hole, close_thresh):
                     num_failures = 0
-                    roulette_hole = new_roulette_hole
+                    slots_hole = new_slots_hole
                     tracker = init_tracker(tracker_num)# does this have to happen every time?
-                    tracker.init(frame, roulette_hole[0]+roulette_hole[1])
+                    tracker.init(frame, slots_hole[0]+slots_hole[1])
                     detecting = False
                     time_since_detection = 0
                 else:
                     num_failures += 1
             elif detecting and not tracking:
                 hsv_thresh = hsv_threshold(frame, h_low, s_low, v_low, h_hi, s_hi, v_hi)
-                new_roulette_hole = find_red_roulette_hole(hsv_thresh, roulette_size_thresh, roulette_dimension_thresh)
-                if new_roulette_hole is not None and close_to(roulette_hole, new_roulette_hole, close_thresh):
+                new_slots_hole = find_red_slots_hole(hsv_thresh, slots_size_thresh, slots_dimension_thresh)
+                if new_slots_hole is not None and close_to(slots_hole, new_slots_hole, close_thresh):
                     num_failures = 0
-                    roulette_hole = new_roulette_hole
+                    slots_hole = new_slots_hole
                 else:
                     num_failures += 1
             elif tracking:
                 ret, bounding_box = tracker.update(frame)
                 if ret:
                     num_failures = 0
-                    roulette_hole = (bounding_box[:2], bounding_box[2:4], roulette_hole[2])
+                    slots_hole = (bounding_box[:2], bounding_box[2:4], slots_hole[2])
                 else:
                     num_failures += 1
-                    
             if num_failures > fail_thresh:
-                roulette_hole = None
+                slots_hole = None
                 detecting = True
 
-            # draw roulette hole onto original image
-            roulette_img = frame.copy()
-            if roulette_hole != None:
-                box = np.int0(cv2.boxPoints(roulette_hole))
-                roulette_img = cv2.drawContours(roulette_img, [box], 0, (0,255,0), 2)
-            cv2.imshow("roulette hole", roulette_img)
+            # draw slots hole onto original image
+            slots_img = frame.copy()
+            if slots_hole != None:
+                box = np.int0(cv2.boxPoints(slots_hole))
+                slots_img = cv2.drawContours(slots_img, [box], 0, (0,255,0), 2)
+            cv2.imshow("slots hole", slots_img)
+
 
             time_since_detection += 1
             k = cv2.waitKey(60) & 0xff
