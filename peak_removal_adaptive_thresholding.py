@@ -28,6 +28,8 @@ from scipy.signal import find_peaks, peak_widths
 #       for getting rid of edgy areas <lenny>
 # TODO: maybe change the number of times it filters in hsv based on the colors in the task
 #           ex: hsv bgr hsv takes care of the background. If there's a big white object, hsv again?
+# TODO: maybe find peaks in 3D histograms to take into account all dimensions of the colorspace at once
+#       https://stackoverflow.com/questions/3684484/peak-detection-in-a-2d-array
 
 peak_width_height = 0.95 # How far down the peak that the algorithm draws 
                         # the horizontal width line
@@ -38,23 +40,23 @@ testing = False
 
 peak_filters = ['hsv', 'bgr', 'hsv']
 
-# cap = cv2.VideoCapture('../data/course_footage/GOPR1142.MP4')
-# # No thresholds
-# h_low = 0
-# s_low = 0
-# v_low = 0
-# h_hi = 255
-# s_hi = 255
-# v_hi = 255
+cap = cv2.VideoCapture('../data/course_footage/GOPR1142.MP4')
+# No thresholds
+h_low = 0
+s_low = 0
+v_low = 0
+h_hi = 255
+s_hi = 255
+v_hi = 255
 
-cap = cv2.VideoCapture('../data/course_footage/path_marker_GOPR1142.mp4')
-# Path marker default
-h_low = 31
-s_low = 28
-v_low = 179
-h_hi = 79
-s_hi = 88
-v_hi = 218
+# cap = cv2.VideoCapture('../data/course_footage/path_marker_GOPR1142.mp4')
+# # Path marker default
+# h_low = 31
+# s_low = 28
+# v_low = 179
+# h_hi = 79
+# s_hi = 88
+# v_hi = 218
 
 # cap = cv2.VideoCapture('../data/course_footage/play_slots_GOPR1142.MP4')
 # # Play slots default
@@ -181,7 +183,7 @@ def find_peak_ranges(frame, display_plots=False, title=None, labels=None, colors
 
             if display_plots:
                 ax = plt.gca()
-                ax.set_xlim([0, 255])
+                ax.set_xlim([0, max(255, max(f))])
                 #Plot values in this channel
                 plt.plot(bins[1:],hist, label=labels[channel], color=colors[channel])
                 # Plot peaks
@@ -428,7 +430,67 @@ def remove_blotchy_chunks(frame, kernel_size=201, iterations=1, display_imgs=Fal
 
     return result
 
-# def single_out_convex_contour(frame):
+def filter_out_highest_peak_multidim(frame, colorspaces=['BGR'], res=100, percentile=10):
+    """ Estimates the "peak-ness" of each pixel in frame across bgr and hsv colorspaces
+        and thresholds out pixels that were "peak-like" in many colorspaces.
+
+        Assumes input frame is in BGR 
+        
+        @param res Resolution. Higher number is lower resolution
+        @param percentile Threshold for pixels to keep in the overall_votes array
+        @param colorspaces The colorspaces in which to determine "peakness"
+
+        List of colorspaces that can be converted to from BGR:
+        https://docs.opencv.org/3.4/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a2a80354788f54d0bed59fa44ea2fb98e
+        - HSV, GRAY, Lab, XYZ, YCrCb, Luv, HLS, YUV
+
+        "Theoretically", the more colorspaces you consider, the better? But noise is added """
+
+    def get_peak_votes(frame):
+        """ Takes in a single-channel frame and returns an array that contains
+            the number of other pixels with the same value at every pixel """
+        dist = np.bincount(frame.flatten())
+
+        if res == 1:
+            vote_arr = dist[frame]
+        else:
+            dist = np.array([np.mean(dist[i*res:i*res+res]) for i in range(len(dist) // res + 1)])
+            vote_arr = dist[frame // res]
+
+        # WELL python is really slow
+        # vote_arr2 = np.empty(frame.shape)
+        # for i in range(len(frame)):
+        #     for j in range(len(frame[0])):
+        #         vote_arr2[i][j] = dist[frame[i][j]]
+        # return vote_arr2
+
+        return vote_arr
+
+    overall_votes = np.zeros(frame.shape[:2], np.uint8)
+    overall_mask = np.zeros(frame.shape[:2], np.uint8)
+
+    for c in colorspaces:
+        if c == "BGR":
+            for ch in range(3):
+                overall_votes = overall_votes + get_peak_votes(frame[:,:,ch])
+        else:
+            changed = cv2.cvtColor(frame, eval('cv2.COLOR_BGR2' + c))
+            if len(changed.shape) == 2:
+                overall_votes = overall_votes + get_peak_votes(changed)
+            else:
+                for ch in range(changed.shape[2]):
+                    overall_votes = overall_votes + get_peak_votes(changed[:,:,ch])
+
+    # Sometimes returns no pixels
+    # thresh = np.mean(overall_votes) - 1.5 * np.std(overall_votes)
+
+    thresh = np.percentile(overall_votes, percentile)
+
+    # Only keep pixels that were very un-peak-like in every colorspace
+    overall_mask[overall_votes < thresh] = 255
+
+    return cv2.bitwise_and(frame, frame, mask=overall_mask)
+
 
 ###########################################
 # Main Body
@@ -445,6 +507,10 @@ if __name__ == "__main__":
     filter_peaks = init_filter_out_highest_peak(peak_filters, 'hsv')
 
     ret_tries = 0
+
+    for i in range(100):
+        cap.read()
+
     while (1 and ret_tries < 50):
         ret, frame = cap.read()
 
@@ -452,29 +518,22 @@ if __name__ == "__main__":
             frame = cv2.resize(frame, None, fx=0.4, fy=0.4)
 
             filtered = filter_peaks(frame)
-
-            # some more things to delete peaks channel by channel
-            h_channel = filtered[:, :, 0]
-            s_channel = filtered[:, :, 1]
-            v_channel = filtered[:, :, 2]
-            s_mask = delete_lowest_valued_peaks_mask(s_channel, 1)
-            v_mask = delete_lowest_valued_peaks_mask(v_channel, 1)
-            mask = cv2.bitwise_and(s_mask, v_mask)
-            filtered2 = cv2.bitwise_and(filtered, filtered, mask=mask)
+            multi_filter1 = filter_out_highest_peak_multidim(frame, ['BGR'])
+            multi_filter2 = filter_out_highest_peak_multidim(frame, ['BGR', 'HSV'])
 
             cv2.imshow('original', frame)
             cv2.imshow('filter ' + "".join([f + " " for f in peak_filters]), filtered)
-            cv2.imshow('2nd filter', filtered2)
-            cv2.imshow('s_mask', s_mask)
-            cv2.imshow('v_mask', v_mask)
+            cv2.imshow('multi_filter bgr', multi_filter1)
+            cv2.imshow('multi_filter bgr hsv', multi_filter2)
 
             # For testing porpoises 
-            out.write(filtered2)
+            # out.write(filtered2)
 
             # Update all of the plt charts
             plt.pause(0.001)
 
             ret_tries = 0
+            cv2.waitKey(1)
             k = cv2.waitKey(60) & 0xff
             if k == 27:
                 break
