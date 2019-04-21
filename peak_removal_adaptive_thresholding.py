@@ -4,70 +4,59 @@ import matplotlib.pyplot as plt
 from scipy.signal import find_peaks, peak_widths
 
 ########################################################################
-# An attempt at an adaptive thresholding algorithm.
-# Identifies "largest" peak in each of the three color channels
-# of RBG and/or HSV images (others are possible) and then uses cv2.inRange() 
-# to filter out background pixels.
-#
-# Program in action: https://i.imgur.com/FSfHGa6.png
-# (Warning: this opens up a lot of windows)
+# An attempt at an adaptive thresholding algorithm based on the frequency
+# of pixel values ("peaks" if looking at a histogram of # pixels vs pixel value of a frame)
 # 
-# Note: this uses functions from the scipy library (downloaded thru pip)
+# *1. *** best of the three *** filter_out_highest_peak_multidim 
+#    pools together how "peak-like" each pixel is in all of the color channels 
+#    of the frame to make a final decision on what is the background
+# 2. init_filter_out_highest_peak
+#    gets rid of large peaks in many different color channels individually
+# 3. remove_blotchy_chunks
+#    places a mask over areas that have lots of edges, which in many cases 
+#    is equivalent to places with lots of noise
 ########################################################################
 
-# Notes on performance
-# - Does worse when the target object is really big, especially if
-#    it is one uniform color
-# - Lets through objects of multiple colors at once because only 
-#    "background" stuff is touched
-# - Will prioritize large weirdly-colored objects, like the flipper
-#    in the play slots video
+if __name__ == "__main__":
+    peak_width_height = 0.95 # How far down the peak that the algorithm draws 
+                            # the horizontal width line
+    lpf_lambda = 0.9
+    lpf_cache_size = 10
 
-# TODO: do low pass filter and close kernel
-# TODO: https://stackoverflow.com/questions/37221685/filtering-foliage-clutter-in-an-image-opencv
-#       for getting rid of edgy areas <lenny>
-# TODO: maybe change the number of times it filters in hsv based on the colors in the task
-#           ex: hsv bgr hsv takes care of the background. If there's a big white object, hsv again?
-# TODO: maybe find peaks in 3D histograms to take into account all dimensions of the colorspace at once
-#       https://stackoverflow.com/questions/3684484/peak-detection-in-a-2d-array
+    testing = False
 
-peak_width_height = 0.95 # How far down the peak that the algorithm draws 
-                        # the horizontal width line
-lpf_lambda = 0.9
-lpf_cache_size = 10
+    peak_filters = ['hsv', 'bgr', 'hsv']
 
-testing = False
+    # cap = cv2.VideoCapture('../data/course_footage/GOPR1142.MP4')
+    # # No thresholds
+    # h_low = 0
+    # s_low = 0
+    # v_low = 0
+    # h_hi = 255
+    # s_hi = 255
+    # v_hi = 255
 
-peak_filters = ['hsv', 'bgr', 'hsv']
+    cap = cv2.VideoCapture('../data/course_footage/path_marker_GOPR1142.mp4')
+    # Path marker default
+    h_low = 31
+    s_low = 28
+    v_low = 179
+    h_hi = 79
+    s_hi = 88
+    v_hi = 218
 
-cap = cv2.VideoCapture('../data/course_footage/GOPR1142.MP4')
-# No thresholds
-h_low = 0
-s_low = 0
-v_low = 0
-h_hi = 255
-s_hi = 255
-v_hi = 255
+    # cap = cv2.VideoCapture('../data/course_footage/play_slots_GOPR1142.MP4')
+    # # Play slots default
+    # h_low = 96
+    # s_low = 82
+    # v_low = 131
+    # h_hi = 190
+    # s_hi = 180
+    # v_hi = 228
 
-# cap = cv2.VideoCapture('../data/course_footage/path_marker_GOPR1142.mp4')
-# # Path marker default
-# h_low = 31
-# s_low = 28
-# v_low = 179
-# h_hi = 79
-# s_hi = 88
-# v_hi = 218
+    # cap = cv2.VideoCapture(0)
 
-# cap = cv2.VideoCapture('../data/course_footage/play_slots_GOPR1142.MP4')
-# # Play slots default
-# h_low = 96
-# s_low = 82
-# v_low = 131
-# h_hi = 190
-# s_hi = 180
-# v_hi = 228
-
-thresholds_used = [h_low, s_low, v_low, h_hi, s_hi, v_hi]
+    # thresholds_used = [h_low, s_low, v_low, h_hi, s_hi, v_hi]
 
 def init_test_hsv_thresholds(thresholds):
     # Keep track of previous threhold values to see if the user is using the trackbar
@@ -166,6 +155,7 @@ def find_peak_ranges(frame, display_plots=False, title=None, labels=None, colors
 
         # Some semi-hardcoded values :)
         num_bins = max(int((np.amax(f)-np.amin(f)) / 4), 10)
+        # num_bins = 30
 
         hist, bins = np.histogram(f, bins=num_bins)
 
@@ -430,15 +420,15 @@ def remove_blotchy_chunks(frame, kernel_size=201, iterations=1, display_imgs=Fal
 
     return result
 
-def filter_out_highest_peak_multidim(frame, colorspaces=['BGR'], res=100, percentile=10):
-    """ Estimates the "peak-ness" of each pixel in frame across bgr and hsv colorspaces
+def filter_out_highest_peak_multidim(frame, res=100, percentile=10):
+    """ Estimates the "peak-ness" of each pixel in frame across color channels
         and thresholds out pixels that were "peak-like" in many colorspaces.
 
-        Assumes input frame is in BGR 
+        frame is a stack of color channels (np.dstack()) and this will consider all channels
+        in the final calculation
         
         @param res Resolution. Higher number is lower resolution
         @param percentile Threshold for pixels to keep in the overall_votes array
-        @param colorspaces The colorspaces in which to determine "peakness"
 
         List of colorspaces that can be converted to from BGR:
         https://docs.opencv.org/3.4/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a2a80354788f54d0bed59fa44ea2fb98e
@@ -457,29 +447,13 @@ def filter_out_highest_peak_multidim(frame, colorspaces=['BGR'], res=100, percen
             dist = np.array([np.mean(dist[i*res:i*res+res]) for i in range(len(dist) // res + 1)])
             vote_arr = dist[frame // res]
 
-        # WELL python is really slow
-        # vote_arr2 = np.empty(frame.shape)
-        # for i in range(len(frame)):
-        #     for j in range(len(frame[0])):
-        #         vote_arr2[i][j] = dist[frame[i][j]]
-        # return vote_arr2
-
         return vote_arr
 
     overall_votes = np.zeros(frame.shape[:2], np.uint8)
     overall_mask = np.zeros(frame.shape[:2], np.uint8)
 
-    for c in colorspaces:
-        if c == "BGR":
-            for ch in range(3):
-                overall_votes = overall_votes + get_peak_votes(frame[:,:,ch])
-        else:
-            changed = cv2.cvtColor(frame, eval('cv2.COLOR_BGR2' + c))
-            if len(changed.shape) == 2:
-                overall_votes = overall_votes + get_peak_votes(changed)
-            else:
-                for ch in range(changed.shape[2]):
-                    overall_votes = overall_votes + get_peak_votes(changed[:,:,ch])
+    for ch in range(frame.shape[2]):
+        overall_votes = overall_votes + get_peak_votes(frame[:,:,ch])
 
     # Sometimes returns no pixels
     # thresh = np.mean(overall_votes) - 1.5 * np.std(overall_votes)
@@ -489,8 +463,53 @@ def filter_out_highest_peak_multidim(frame, colorspaces=['BGR'], res=100, percen
     # Only keep pixels that were very un-peak-like in every colorspace
     overall_mask[overall_votes < thresh] = 255
 
-    return cv2.bitwise_and(frame, frame, mask=overall_mask)
+    return overall_votes, cv2.bitwise_and(frame, frame, mask=overall_mask)
 
+def k_means_segmentation(votes, frame_shape, num_groups=2, percentile=10):
+    """ Attempts to use kmeans to segment the frame into num_group features
+        (not including the background, denoted by a very large value in votes).
+
+        votes is an output of the filter_out_highest_peak_multidim() function
+
+        Output: frame_shape x num_groups 3D matrix. Get a group mapped to the 
+        frame by doing groups[:,:,group_num] """
+    votes = np.float32(votes).flatten()
+
+    # Make kmeans only consider the non-background pixels
+    background = np.zeros(votes.shape)
+    background[votes>=np.percentile(votes, percentile)] = 1
+    cluster_data = votes[background==0]
+    cluster_indexes = np.array(range(len(votes)))[background==0]
+
+    # Do kmeans
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+    flags = cv2.KMEANS_RANDOM_CENTERS
+    compactness,labels,centers = cv2.kmeans(cluster_data,num_groups,None,criteria,10,flags)
+
+    # Reconstruct the original votes array with background's label = -1
+    label_arr = np.empty(votes.shape)
+    label_arr[background==1] = -1
+    for i in range(num_groups):
+        label_arr[cluster_indexes[labels.flatten()==i]] = i
+
+    unique_labels, label_counts = np.unique(label_arr, return_counts=True)
+    label_order = list(range(np.int0(np.amax(unique_labels)) + 2)) # something is erroring here
+    if len(label_counts) < num_groups + 1:
+        # add in a slot for the background if no background is found
+        label_counts = np.insert(label_counts, 0, 0)
+
+    label_order.sort(key=lambda x: label_counts[x])
+
+    groups = np.empty((frame_shape[0], frame_shape[1], num_groups + 1))
+    for i, l in enumerate(label_order):
+        group = np.zeros(votes.shape)
+        group[label_arr.flatten()==l - 1] = 255
+        groups[:,:,i] = np.reshape(group, frame_shape[:2])
+
+    # for i in range(len(unique_labels)):
+    #     cv2.imshow(str(i) + " label", groups[:,:,i])
+
+    return groups
 
 ###########################################
 # Main Body
@@ -508,23 +527,22 @@ if __name__ == "__main__":
 
     ret_tries = 0
 
-    for i in range(100):
-        cap.read()
-
     while (1 and ret_tries < 50):
         ret, frame = cap.read()
 
         if ret:
             frame = cv2.resize(frame, None, fx=0.4, fy=0.4)
 
-            filtered = filter_peaks(frame)
-            multi_filter1 = filter_out_highest_peak_multidim(frame, ['BGR'])
-            multi_filter2 = filter_out_highest_peak_multidim(frame, ['BGR', 'HSV'])
+            votes, multi_filter1 = filter_out_highest_peak_multidim(np.dstack([frame, cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)]))
+            multi_filter1 = multi_filter1[:, :, :3]
+
+            kmeans_groups = k_means_segmentation(votes, frame.shape)
 
             cv2.imshow('original', frame)
-            cv2.imshow('filter ' + "".join([f + " " for f in peak_filters]), filtered)
             cv2.imshow('multi_filter bgr', multi_filter1)
-            cv2.imshow('multi_filter bgr hsv', multi_filter2)
+
+            for i in range(kmeans_groups.shape[2]):
+                cv2.imshow('Kmeans group ' + str(i), kmeans_groups[:,:,i])
 
             # For testing porpoises 
             # out.write(filtered2)
@@ -533,7 +551,6 @@ if __name__ == "__main__":
             plt.pause(0.001)
 
             ret_tries = 0
-            cv2.waitKey(1)
             k = cv2.waitKey(60) & 0xff
             if k == 27:
                 break
