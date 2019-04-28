@@ -72,55 +72,88 @@ cv.createTrackbar(low_R_name, window_detection_name , low_R, max_value, on_low_R
 
 cap = cv.VideoCapture(args[1])
 
-def only_once(frame):
+#man/min of past ten frames; average or total
+def aggregate_rescaling(frame): #you only pca once
+	global only_once
+	global weights
+	global max_min
 	frame = cv.resize(frame, (0,0), fx=0.5, fy=0.5)
-	#frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-	r, c, d = frame.shape
-	#print(r, c, d)
-	A = np.reshape(frame, (r * c, d))#correct
-	#print(A.mean(axis=0)[np.newaxis, :])
-	A_dot = A - A.mean(axis=0)[np.newaxis, :]
-	#print(A[:10])
-	_, eigv = LA.eigh(A_dot.T @ A_dot)
-	return r, c, A_dot, eigv[:, 0]
-
-def loop(frame):
-	frame = cv.resize(frame, (0,0), fx=0.5, fy=0.5)
+	#frame = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
 	frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+	
+	#kernel = np.ones((5,5),np.float32)/25
+	#frame = cv.filter2D(frame,-1,kernel)
+
 	r, c, d = frame.shape
+	A = np.reshape(frame, (r * c, d))
 
-	A = np.reshape(frame, (r * c, d))#correct
+	if not only_once:
 
-	A_dot = A - A.mean(axis=0)[np.newaxis, :]
+		A_dot = A - A.mean(axis=0)[np.newaxis, :]
 
-	_, eigv = LA.eigh(A_dot.T @ A_dot)
-	weights = eigv[:, 0]
+		_, eigv = LA.eigh(A_dot.T @ A_dot)
+		weights = eigv[:, 0]
+		#if (weights<0).sum() > 0:
+		#if np.mean(weights) < 0:
+		#	weights *= -1
 
-	red = np.reshape(A_dot @ weights, (r, c))
-
+		red = np.reshape(A_dot @ weights, (r, c))
+		only_once = True
+	else:
+		red = np.reshape(A @ weights, (r, c))
 	#red /= np.max(np.abs(red),axis=0) #this looks real cool - Damas
-	red -= np.min(red)
-	red *= (255.0/np.abs(np.max(red)))
+	"""
+	if len(max_min['max']) == 10:
+		max_min['max'] = max_min['max'][1:] + [np.max(red)]
+		max_min['min'] = max_min['min'][1:] + [np.min(red)]
+	else:
+		max_min['max'].append(np.max(red))
+		max_min['min'].append(np.min(red))
+	"""
+
+	if np.min(red) < max_min['min']:
+		max_min['min'] = np.min(red)
+	if np.max(red) > max_min['max']:
+		max_min['max'] = np.max(red)
+
+	#print(np.min(red), np.max(red), 'all time Domas', max_min['min'], max_min['max'])
+
+	red -= max_min['min']
+	red *= (255.0/(max_min['max'] - max_min['min']))
+
+	#red -= np.min(max_min['min'])
+	#red *= (255.0/np.abs(np.max(max_min['max'])))
+
+	#red -= np.min(red)
+	#red *= (255.0/np.abs(np.max(red)))
+	if not paused:
+		print(np.min(red), np.max(red), max_min['min'], max_min['max'])
 
 	red = red.astype(np.uint8)
-	
 	red = np.expand_dims(red, axis = 2)
 	red = np.concatenate((red, red, red), axis = 2)
 	
-	cv.imshow('Nick Weaver Mr. PhD was a mistake', red)
+	cv.imshow('One Time PCA plus all time aggregate rescaling', red)
 	cv.imshow('frame', frame_gray)
 
 paused = False
-#r, c, A_dot, weights = only_once(cap.read()[1])
-
+only_once = False
+weights = []
+max_min = {'max': 90, 'min': -20}
+speed = 1
 while True:
 	if not paused:
-		ret, frame = cap.read()
+		for _ in range(speed):
+			ret, frame = cap.read()
 	if ret:
-		loop(frame)
+		aggregate_rescaling(frame)
 		#break
 	key = cv.waitKey(30)
 	if key == ord('q') or key == 27:
 		break
 	if key == ord('p'):
 		paused = not paused
+	if key == ord('i') and speed > 1:
+		speed -= 1
+	if key == ord('o'):
+		speed += 1
