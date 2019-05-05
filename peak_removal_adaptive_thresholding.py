@@ -18,14 +18,7 @@ from scipy.signal import find_peaks, peak_widths
 ########################################################################
 
 if __name__ == "__main__":
-    peak_width_height = 0.95 # How far down the peak that the algorithm draws 
-                            # the horizontal width line
-    lpf_lambda = 0.9
-    lpf_cache_size = 10
-
     testing = False
-
-    peak_filters = ['hsv', 'bgr', 'hsv']
 
     # cap = cv2.VideoCapture('../data/course_footage/GOPR1142.MP4')
     # # No thresholds
@@ -146,6 +139,8 @@ def find_peak_ranges(frame, display_plots=False, title=None, labels=None, colors
 
     # TODO: Maybe use a different combination of peak characteristics to more accurately
     #       select the entire peak (only the tip is selected right now)
+    peak_width_height = 0.95 # How far down the peak that the algorithm draws 
+                            # the horizontal width line
 
     def find_highest_peak(channel, display_plots=False):
         """ Finds and returns the x-range of the highest peak in the
@@ -173,6 +168,7 @@ def find_peak_ranges(frame, display_plots=False, title=None, labels=None, colors
 
             if display_plots:
                 ax = plt.gca()
+                print(max(f))
                 ax.set_xlim([0, max(255, max(f))])
                 #Plot values in this channel
                 plt.plot(bins[1:],hist, label=labels[channel], color=colors[channel])
@@ -205,6 +201,7 @@ def find_peak_ranges(frame, display_plots=False, title=None, labels=None, colors
 def plot_peaks(frame, title, labels, colors):
     # Shh this is just a helper function that makes the code more readable
     # Not to be used in practice.
+    # NOTE: you need to call plt.pause(0.001) afterwards to render the plot
     find_peak_ranges(frame, True, title, labels, colors)
 
 def init_filter_out_highest_peak(filters, return_colorspace="any", input_colorspace="bgr"):
@@ -420,7 +417,7 @@ def remove_blotchy_chunks(frame, kernel_size=201, iterations=1, display_imgs=Fal
 
     return result
 
-def filter_out_highest_peak_multidim(frame, res=100, percentile=10):
+def filter_out_highest_peak_multidim(frame, res=69, percentile=10, weights=None):
     """ Estimates the "peak-ness" of each pixel in frame across color channels
         and thresholds out pixels that were "peak-like" in many colorspaces.
 
@@ -435,6 +432,9 @@ def filter_out_highest_peak_multidim(frame, res=100, percentile=10):
         - HSV, GRAY, Lab, XYZ, YCrCb, Luv, HLS, YUV
 
         "Theoretically", the more colorspaces you consider, the better? But noise is added """
+    if weights is None:
+        weights = np.ones(frame.shape[2])
+        # TODO: add weighting to add more weight to pca than rbg
 
     def get_peak_votes(frame):
         """ Takes in a single-channel frame and returns an array that contains
@@ -453,21 +453,21 @@ def filter_out_highest_peak_multidim(frame, res=100, percentile=10):
     overall_mask = np.zeros(frame.shape[:2], np.uint8)
 
     for ch in range(frame.shape[2]):
-        overall_votes = overall_votes + get_peak_votes(frame[:,:,ch])
+        overall_votes = overall_votes + get_peak_votes(frame[:,:,ch]) * weights[ch]
 
     # Sometimes returns no pixels
-    # thresh = np.mean(overall_votes) - 1.5 * np.std(overall_votes)
+    thresh = np.mean(overall_votes) - 2 * np.std(overall_votes)
 
-    thresh = np.percentile(overall_votes, percentile)
+    # thresh = np.percentile(overall_votes, percentile)
 
     # Only keep pixels that were very un-peak-like in every colorspace
-    overall_mask[overall_votes < thresh] = 255
+    overall_mask[overall_votes <= thresh] = 255
 
     return overall_votes, cv2.bitwise_and(frame, frame, mask=overall_mask)
 
 def k_means_segmentation(votes, frame_shape, num_groups=2, percentile=10):
     """ Attempts to use kmeans to segment the frame into num_group features
-        (not including the background, denoted by a very large value in votes).
+        (not including the background), denoted by a very large value in votes.
 
         votes is an output of the filter_out_highest_peak_multidim() function
 
@@ -523,7 +523,7 @@ if __name__ == "__main__":
     if testing:
         test_hsv_thresholds = init_test_hsv_thresholds(thresholds_used)
 
-    filter_peaks = init_filter_out_highest_peak(peak_filters, 'hsv')
+    filter_peaks = init_filter_out_highest_peak(['hsv,', 'bgr', 'hsv'], 'hsv')
 
     ret_tries = 0
 
