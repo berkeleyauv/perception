@@ -3,9 +3,11 @@ from combined_filter import init_combined_filter
 if __name__ == "__main__":
     import numpy as np
     import cv2
+    from sys import argv as args
 
     # Data fron the new course footage dropbox folder
-    cap = cv2.VideoCapture('../data/course_footage/path_marker_GOPR1142.mp4')
+    # cap = cv2.VideoCapture('../data/course_footage/path_marker_GOPR1142.mp4')
+    cap = cv2.VideoCapture(args[1])
 
 def thresh_by_contour_size(frame, num_contours):
     """ Assumes frame is grayscale """
@@ -22,7 +24,7 @@ def thresh_by_contour_size(frame, num_contours):
     else:
         return frame
 
-def find_path_marker(frame, draw_figs=False):
+def find_path_marker(frame, draw_figs=False, thresh=0.3):
     """ Assumes frame is grayscale
         Returns angle of bottom line and top line relative to 0 radians
         This function doesn't guarantee that the angles are distinct
@@ -42,7 +44,7 @@ def find_path_marker(frame, draw_figs=False):
 
     rho = 1  # distance resolution in pixels of the Hough grid
     theta = np.pi / 180 # angular resolution in radians of the Hough grid
-    threshold = 10  # minimum number of votes (intersections in Hough grid cell)
+    threshold = 5  # minimum number of votes (intersections in Hough grid cell)
     min_line_length = 20  # minimum number of pixels making up a line
     max_line_gap = 2  # maximum gap in pixels between connectable line segments
 
@@ -59,33 +61,50 @@ def find_path_marker(frame, draw_figs=False):
         lines = lines[:10]
 
         # if line's y0 is below the average y0, it is a part of the top line, opposite for bottom line
-        avgy = sum([l[0][1] for l in lines]) // len(lines)
-        bot_lines = [l for l in lines if l[0][1] > avgy]
-        top_lines = [l for l in lines if l[0][1] < avgy]
+        avgy = sum([l[0][1] + l[0][3] for l in lines]) // (len(lines) * 2)
+        bot_lines = [l for l in lines if min(l[0][1], l[0][3]) > avgy]
+        top_lines = [l for l in lines if max(l[0][1], l[0][3]) < avgy]
 
         if len(bot_lines) > 0 and len(top_lines) > 0:
-            # Sometimes, these two angles are the same :c
             bot_angle = sum([np.arctan2(l[0][1]-l[0][3],l[0][0]-l[0][2]) for l in bot_lines]) / len (bot_lines)
             top_angle = sum([np.arctan2(l[0][1]-l[0][3],l[0][0]-l[0][2]) for l in top_lines]) / len (top_lines)
             
-            # # This is wrong. TODO: make the bottom and top angles always 135 degrees apart to hopefully
-            # # get rid of error
-            # diff = np.pi * 3/4 - (top_angle - bot_angle) # path marker segments are always 135 degrees apart
-            # print(bot_angle, top_angle, diff)
+            if bot_angle - top_angle > np.pi:
+                diff = (np.pi * 5/4 - (bot_angle - top_angle)) / 2
+            else:
+                diff = (np.pi * 3/4 - (bot_angle - top_angle)) / 2
+
+            # abort if the detected marker segments are not close to 135 degrees apart at all
+            if diff > thresh:
+                if draw_figs:
+                    cv2.imshow('lines bottom', frame)
+                    cv2.imshow('lines top', frame)
+                    cv2.imshow('frame with path marker angles', frame)
+                return None
+
+            # # otherwise, make the two segments 135 degrees apart
+            # # Oh this might increase the weights given to bad data. meh
             # bot_angle += diff
             # top_angle -= diff
 
             if draw_figs:
-                line_image = frame.copy()
-                line_image = draw_marker_angles(line_image, (bot_angle, top_angle))
+                line_image_bot = frame.copy()
+                line_image_top = frame.copy()
+                for l in bot_lines:
+                    cv2.line(line_image_bot, tuple(l[0][0:2]), tuple(l[0][2:4]), 255, 5)
+                for l in top_lines:
+                    cv2.line(line_image_top, tuple(l[0][0:2]), tuple(l[0][2:4]), 255, 5)
 
-                cv2.imshow('lines', line_image)
+                cv2.imshow('lines bottom', line_image_bot)
+                cv2.imshow('lines top', line_image_top)
+
                 cv2.imshow('frame with path marker angles', draw_marker_angles(frame, (bot_angle, top_angle)))
 
             return bot_angle, top_angle
         else:
             if draw_figs:
-                cv2.imshow('lines', frame)
+                cv2.imshow('lines bottom', frame)
+                cv2.imshow('lines top', frame)
                 cv2.imshow('frame with path marker angles', frame)
 
             return None
@@ -102,44 +121,47 @@ def path_marker_get_new_heading(cap, is_approaching, draw_figs=False):
                                        points towards. Returns angle for the top leg of the path marker.
     """
     angles = []
+    test_angles = np.empty((10, 2)) #temporary. for testing porpoises
 
     # function aborts if the 10 most recent camera frames were invalid
-    # or a path marker has not been found in 30 frames
     ret_tries = 0 
-    marker_tries = 0
+    frames_used = 0
 
-    while len(angles) < 10 and ret_tries < 10 and marker_tries < 30:
+    while frames_used < 10 and ret_tries < 10:
         ret, frame = cap.read()
         if ret:
             ret_tries = 0
+            frames_used += 1
             frame = cv2.resize(frame, None, fx=0.5, fy=0.5)
 
-            threshed = combined_filter(frame, True)
-            new_angles = find_path_marker(threshed, True)
+            threshed = combined_filter(frame, False)
+            new_angles = find_path_marker(threshed, draw_figs)
 
             if new_angles is not None:
-                marker_tries = 0
                 bot_angle, top_angle = new_angles
             
-                # print('bottom angle', bot_angle, 'top angle', top_angle)
                 if is_approaching:
                     angles.append(np.pi/2 - bot_angle)
+                    test_angles[len(angles) - 1] = (bot_angle, top_angle)
                 else:
                     # top_angle is always negative so compare it to
                     # -np.pi/2
                     angles.append(-np.pi/2 - top_angle)
-            else:
-                marker_tries += 1
+                    test_angles[len(angles) - 1] = (bot_angle, top_angle)
+            if draw_figs:
+                cv2.waitKey(50)
         else:
             ret_tries += 1
 
-    if ret_tries >= 10 or marker_tries >= 30:
+    if ret_tries >= 10 or len(angles) < 3: # does not return an answer if it was really unsure
         return None
     else:
+        if draw_figs:
+            cv2.imshow('averaged angles', draw_marker_angles(frame, test_angles[:len(angles)].sum(axis=0) / len(angles)))
         return sum(angles) / len(angles)
 
 
-def draw_marker_angles(frame, marker_angles):
+def draw_marker_angles(frame, marker_angles, right=False):
     """ Draws lines with the same angles as those in marker_angles off to
         the side of the frame """
 
@@ -147,7 +169,10 @@ def draw_marker_angles(frame, marker_angles):
     bot_angle, top_angle = marker_angles
 
     h, w = frame.shape[:2]
-    x, y = w*0.75, h*0.5
+    if right:
+        x, y = w*0.25, h*0.5
+    else:
+        x, y = w*0.75, h*0.5
     r = 20
     pt_mid = (int(x), int(y))
     pt_bot = (int(x + r*np.cos(bot_angle)), int(y + r*np.sin(bot_angle)))
@@ -156,8 +181,8 @@ def draw_marker_angles(frame, marker_angles):
         line_image = cv2.line(line_image, pt_mid, pt_bot, 255, 5)
         line_image = cv2.line(line_image, pt_mid, pt_top, 255, 5)
     else:
-        line_image = cv2.line(line_image, pt_mid, pt_bot, tuple(np.full(frame.shape[2], 255)), 5)
-        line_image = cv2.line(line_image, pt_mid, pt_top, tuple(np.full(frame.shape[2], 255)), 5)
+        line_image = cv2.line(line_image, pt_mid, pt_bot, (255, 255, 255), 5)
+        line_image = cv2.line(line_image, pt_mid, pt_top, (255, 255, 255), 5)
 
     return line_image
 
@@ -168,18 +193,26 @@ def draw_marker_angles(frame, marker_angles):
 if __name__ == "__main__":
     marker_angles = None
 
-    # For testing purposes
-    for _ in range(50):
-        cap.read()
+    # # For testing purposes
+    # # Thresholding is really bad if this starts at 650
+    # for _ in range(600):
+    #     cap.read()
 
     combined_filter = init_combined_filter()
 
-    new_heading = 1 # placeholder value
-    while new_heading is not None:
-        new_heading = path_marker_get_new_heading(cap, is_approaching=True)
+    num_fails = 0
+    while num_fails < 5:
+        # Instead of passing in cap, we can alternatively pass in the last 10 frames as a list
+        # but idk which is the better design choice
+        new_heading = path_marker_get_new_heading(cap, is_approaching=True, draw_figs=True)
         print('new heading:', new_heading)
 
-        k = cv2.waitKey(60) & 0xff
+        if new_heading is None:
+            num_fails += 1
+        else:
+            num_fails = 0
+
+        # k = cv2.waitKey(60) & 0xff
         if k == 27: # esc
             break
 
