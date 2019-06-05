@@ -15,7 +15,7 @@ def init_aggregate_rescaling(show_frame=True):
 		nonlocal only_once
 		nonlocal weights
 		nonlocal max_min
-		print(only_once, max_min, weights)
+		#print(only_once, max_min, weights)
 		#frame = cv.resize(frame, (0,0), fx=0.5, fy=0.5)
 		frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 
@@ -41,10 +41,10 @@ def init_aggregate_rescaling(show_frame=True):
 
 		red -= max_min['min']
 		red *= (255.0/(max_min['max'] - max_min['min']))
-
+		"""
 		if False:#not paused:
 			print(np.min(red), np.max(red), max_min['min'], max_min['max'])
-
+		"""
 		red = red.astype(np.uint8)
 		red = np.expand_dims(red, axis = 2)
 		red = np.concatenate((red, red, red), axis = 2)
