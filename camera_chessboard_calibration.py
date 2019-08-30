@@ -19,13 +19,32 @@ import random, string
 # https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_calib3d/py_calibration/py_calibration.html
 ##################################################################
 
+##################################################################
+# Helper functions
+##################################################################
+
+def isFromWebcam(cap):
+    return isinstance(cap, cv2.VideoCapture)
+def isFromFileSystem(cap):
+    return isinstance(cap, list)
+def get_frame(cap, index=0):
+    """ Returns ret, frame just like a regular cv2.VideoCapture does"""
+    if isFromFileSystem(cap):
+        if len(cap) == 0 or index >= len(cap):
+            return (False, None)
+        else:
+            return (True, cv2.imread(cap[index]))
+    elif isFromWebcam(cap):
+        return cap.read()
+    else:
+        return (True, cap)
 
 ##################################################################
 # Test 1: OpenCV's tutorial dataset
 # source: https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_calib3d/py_calibration/py_calibration.html
 ##################################################################
 # images = glob.glob('../data/opencv_tutorial_calibration_images/*.jpg')
-# test_img = cv2.imread('../data/opencv_tutorial_calibration_images/left02.jpg')
+# test_img = get_frame(cv2.imread('../data/opencv_tutorial_calibration_images/left02.jpg'))
 # checker_rows, checker_cols = 6, 7
 
 ##################################################################
@@ -33,31 +52,24 @@ import random, string
 # source: https://vision.in.tum.de/data/datasets/mono-dataset
 ##################################################################
 # images = glob.glob('../data/calib_narrow_checkerboard1/images/*.jpg')
-# test_img = cv2.imread('../data/sequence_47/images/00001.jpg')
+# test_img = get_frame(cv2.imread('../data/sequence_47/images/00001.jpg'))
 # checker_rows, checker_cols = 5, 8
 
 ##################################################################
 # Test 3: Pictures taken by oneself
 ##################################################################
-images = glob.glob('iphone_chessboard_imgs/*.JPG')
-test_img = cv2.imread('iphone_chessboard_imgs/IMG_3413.JPG')
+# # Files from my computer 1
+# images = glob.glob('iphone_chessboard_imgs/*.JPG')
+# test_img = get_frame(cv2.imread('iphone_chessboard_imgs/IMG_3413.JPG'))
+# checker_rows, checker_cols = 7, 7
+# # Files from my computer 2
 # images = glob.glob('*.png')
-# test_img = cv2.imread('GIKTZTK9HV.png')
-# images = cv2.VideoCapture(0)
-# test_img = cv2.VideoCapture(0)
+# test_img = get_frame(cv2.imread('GIKTZTK9HV.png'))
+# checker_rows, checker_cols = 7, 7
+# Use webcam
+images = cv2.VideoCapture(0)
+test_img = get_frame(cv2.VideoCapture(0))
 checker_rows, checker_cols = 7, 7
-
-def get_frame(cap, index=0):
-    """ Returns ret, frame just like a regular cv2.VideoCapture does"""
-    if isinstance(cap, list):
-        if len(cap) == 0 or index >= len(cap):
-            return (False, None)
-        else:
-            return (True, cv2.imread(cap[index]))
-    elif isinstance(cap, cv2.VideoCapture):
-        return cap.read()
-    else:
-        return (True, cap)
 
 def undistort_test(mtx, dist, test_img):
     print('camera matrix:')
@@ -65,7 +77,6 @@ def undistort_test(mtx, dist, test_img):
     print('distortion matrix:')
     print(np.array2string(dist, separator=', '))
 
-    a = test_img
     ret, test_img = get_frame(test_img)
     h,  w = test_img.shape[:2]
     newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx,dist,(w,h),1,(w,h))
@@ -88,7 +99,7 @@ def undistort_test(mtx, dist, test_img):
     input()
 
 def is_recording():
-    print("\aRecord? (save input images?)")
+    print("Do you want to save the images taken in this session? (y/n)")
     user = input()
     if 'y' in user or 't' in user:
         return True
@@ -101,7 +112,8 @@ def is_recording():
 # Start script
 ########################################################################
 
-if isinstance(images, cv2.VideoCapture):
+if isFromWebcam(images):
+    print("Is recording")
     recording = is_recording()
 else:
     print("Not recording")
@@ -119,6 +131,7 @@ imgpoints = [] # 2d points in image plane.
 # Gather data points
 count = 0
 ret_frame = True
+gray = None
 while count < 40 and ret_frame:
     ret_frame, img = get_frame(images, count)
     if ret_frame:
@@ -146,17 +159,20 @@ while count < 40 and ret_frame:
             cv2.waitKey(500)
         else:
             cv2.imshow('chessboard', img)
-            print(count, 'bad image', images[count].split('/').pop() if isinstance(images, list) else '') 
+            print(count, 'no chessboard found. skipped', images[count].split('/').pop() if isinstance(images, list) else '') 
             if isinstance(images, list):
                 os.remove('iphone_chessboard_imgs/'+images[count].split('/').pop())
                 print(' -removed')
             cv2.waitKey(500)
     count += 1
 
-# Get camera matrix and dist
-ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1],None,None)
+if gray is not None:
+    # Get camera matrix and dist
+    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1],None,None)
 
-# Test it out
-undistort_test(mtx, dist, test_img)
+    # Test it out
+    undistort_test(mtx, dist, test_img)
+else:
+    print("No images found. If you want to capture from your webcam, uncomment the 'Use webcam' block at the top")
 
 cv2.destroyAllWindows()
