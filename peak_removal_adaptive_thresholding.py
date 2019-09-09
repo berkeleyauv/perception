@@ -20,23 +20,23 @@ from scipy.signal import find_peaks, peak_widths
 if __name__ == "__main__":
     testing = False
 
-    # cap = cv2.VideoCapture('../data/course_footage/GOPR1142.MP4')
-    # # No thresholds
-    # h_low = 0
-    # s_low = 0
-    # v_low = 0
-    # h_hi = 255
-    # s_hi = 255
-    # v_hi = 255
+    cap = cv2.VideoCapture('../data/course_footage/GOPR1142.MP4')
+    # No thresholds
+    h_low = 0
+    s_low = 0
+    v_low = 0
+    h_hi = 255
+    s_hi = 255
+    v_hi = 255
 
-    cap = cv2.VideoCapture('../data/course_footage/path_marker_GOPR1142.mp4')
-    # Path marker default
-    h_low = 31
-    s_low = 28
-    v_low = 179
-    h_hi = 79
-    s_hi = 88
-    v_hi = 218
+    # cap = cv2.VideoCapture('../data/course_footage/path_marker_GOPR1142.mp4')
+    # # Path marker default
+    # h_low = 31
+    # s_low = 28
+    # v_low = 179
+    # h_hi = 79
+    # s_hi = 88
+    # v_hi = 218
 
     # cap = cv2.VideoCapture('../data/course_footage/play_slots_GOPR1142.MP4')
     # # Play slots default
@@ -417,7 +417,7 @@ def remove_blotchy_chunks(frame, kernel_size=201, iterations=1, display_imgs=Fal
 
     return result
 
-def filter_out_highest_peak_multidim(frame, res=69, percentile=10, weights=None):
+def filter_out_highest_peak_multidim(frame, res=69, percentile=10, custom_weights=None, print_weights=False):
     """ Estimates the "peak-ness" of each pixel in frame across color channels
         and thresholds out pixels that were "peak-like" in many colorspaces.
 
@@ -432,14 +432,18 @@ def filter_out_highest_peak_multidim(frame, res=69, percentile=10, weights=None)
         - HSV, GRAY, Lab, XYZ, YCrCb, Luv, HLS, YUV
 
         "Theoretically", the more colorspaces you consider, the better? But noise is added """
-    if weights is None:
-        weights = np.ones(frame.shape[2])
-        # TODO: add weighting to add more weight to pca than rbg
 
+    from math import log
     def get_peak_votes(frame):
         """ Takes in a single-channel frame and returns an array that contains
             the number of other pixels with the same value at every pixel """
         dist = np.bincount(frame.flatten())
+
+        # Set the recommended weight to (the spread of the pixel values from 0-255)
+        # recommended_weight = abs(np.subtract(*np.percentile(np.nonzero(dist), [75, 25])) - (255//2))
+        recommended_weight = abs((np.max(np.nonzero(dist)) - np.min(np.nonzero(dist))))
+        # Stretch out extremes
+        # recommended_weight = pow(2, recommended_weight//8)
 
         if res == 1:
             vote_arr = dist[frame]
@@ -447,13 +451,20 @@ def filter_out_highest_peak_multidim(frame, res=69, percentile=10, weights=None)
             dist = np.array([np.mean(dist[i*res:i*res+res]) for i in range(len(dist) // res + 1)])
             vote_arr = dist[frame // res]
 
-        return vote_arr
+        return recommended_weight, vote_arr
 
     overall_votes = np.zeros(frame.shape[:2], np.uint8)
     overall_mask = np.zeros(frame.shape[:2], np.uint8)
 
+    if print_weights:
+        print('------------------------', custom_weights)
     for ch in range(frame.shape[2]):
-        overall_votes = overall_votes + get_peak_votes(frame[:,:,ch]) * weights[ch]
+        weight, vote_arr = get_peak_votes(frame[:,:,ch])
+        if custom_weights is not None:
+            weight = custom_weights[ch]
+        if print_weights:
+            print(weight)
+        overall_votes = overall_votes + vote_arr * weight
 
     # Sometimes returns no pixels
     thresh = np.mean(overall_votes) - 2 * np.std(overall_votes)
@@ -533,16 +544,19 @@ if __name__ == "__main__":
         if ret:
             frame = cv2.resize(frame, None, fx=0.4, fy=0.4)
 
-            votes, multi_filter1 = filter_out_highest_peak_multidim(np.dstack([frame, cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)]))
+            votes, multi_filter1 = filter_out_highest_peak_multidim(np.dstack([frame, cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)]), custom_weights=[1, 1, 1, 1, 1, 1])
+            votes, multi_filter2 = filter_out_highest_peak_multidim(np.dstack([frame, cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)]))
             multi_filter1 = multi_filter1[:, :, :3]
+            multi_filter2 = multi_filter2[:, :, :3]
 
-            kmeans_groups = k_means_segmentation(votes, frame.shape)
+            # kmeans_groups = k_means_segmentation(votes, frame.shape)
 
             cv2.imshow('original', frame)
-            cv2.imshow('multi_filter bgr', multi_filter1)
+            # cv2.imshow('multi_filter bgr', multi_filter1)
+            cv2.imshow('multi_filter bgr recommended', multi_filter2)
 
-            for i in range(kmeans_groups.shape[2]):
-                cv2.imshow('Kmeans group ' + str(i), kmeans_groups[:,:,i])
+            # for i in range(kmeans_groups.shape[2]):
+            #     cv2.imshow('Kmeans group ' + str(i), kmeans_groups[:,:,i])
 
             # For testing porpoises 
             # out.write(filtered2)
