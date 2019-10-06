@@ -11,7 +11,7 @@ IMPORTANT!!!! RUN THIS WITH $ python3 threshTest.py GOPR1142.mp4
 max_value = 255
 max_value_H = 360//2
 low_H = 0
-low_S = 111
+low_S = 98
 low_V = 0
 high_H = max_value_H
 high_S = max_value
@@ -179,18 +179,20 @@ while True:
             heur1 = heuristic(contours[1])
             likelyGate = [{'cont': contours[0], 'heur': heur0}, {'cont': contours[1], 'heur': heur1}]
 
+        """
         ### This is very crude adaptive thresholding
         totArea = 0
         for cnt in contours:
             totArea += cv.contourArea(cnt)
         if totArea > 19000:
             low_S -= .5
-        if low_S < 111:
+        if low_S < 250:
             low_S += .2
         ###
+        """
 
         untampered = np.copy(frame)
-        cv.putText(frame, str(low_S)+' '+str(totArea), (100, 100), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255))
+        #cv.putText(frame, str(low_S)+' '+str(totArea), (100, 100), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255))
         if contours:
             #likelyGate.append(contours[0])
             #findLikelyGate(likelyGate, contours)
