@@ -1,0 +1,13 @@
+version: 3
+
+groups:
+  admins:
+    conditions:
+    - "base.ref == 'master'"
+    reviewers:
+      teams:
+      - code-admins
+    reviews:
+    - required: 1
+    - request: 1
+    - request_order: shuffle
