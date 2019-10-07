@@ -1,5 +1,10 @@
 version: 3
 
+pullapprove_conditions:
+- condition: "base.ref == 'master'"
+  unmet_status: success
+  explanation: "Review not required unless merging to master"
+
 groups:
   admins:
     conditions:
@@ -8,6 +13,6 @@ groups:
       teams:
       - code-admins
     reviews:
-    - required: 1
-    - request: 1
-    - request_order: shuffle
+      required: 1
+      request: 1
+      request_order: shuffle
