@@ -9,21 +9,23 @@ def sanity_test(algorithm, test_imgs):
         algorithm: object that extends TaskPerceiver
 
     Example usage:
-        from sanity_test import sanity_test
-        import pytest
+        ##### In Algorithm1.py #####
         class Algorithm1(TaskPerceiver):
             def analyze(self, frame, debug):
                 pass
-        class TestAlgorithm1():
-            @pytest.fixture(scope="class")
-            def algorithm(self):
-                return Algorithm1()
-            @pytest.fixture(scope="class")
-            def test_imgs(self):
-                return [None, None, None] # Test images for this algorithm
 
-            def test_sanity(self, algorithm, test_imgs):
-                sanity_test(algorithm, test_imgs)
+        ##### In test_Algorithm1.py #####
+        from sanity_test import sanity_test
+        import pytest
+
+        # Some function that returns test images. This is scoped to this file/module.
+        def get_test_imgs():
+            return [None, None, None]
+
+        @pytest.mark.parametrize("algorithm", [Algorithm1()])
+        @pytest.mark.parametrize("test_imgs", [get_test_imgs()])
+        def test_sanity(algorithm, test_imgs):
+            sanity_test(algorithm, test_imgs)
     """
 
     MAX_RUNTIME = 3 # Per call to analyze() in seconds
@@ -60,4 +62,3 @@ def run_algorithm(algorithm, test_imgs, num_runs, cconn):
             # Send the error message and the image number back to the main thread
             cconn.send((e, i))
             break
-            
