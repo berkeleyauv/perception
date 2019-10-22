@@ -60,3 +60,4 @@ def run_algorithm(algorithm, test_imgs, num_runs, cconn):
             # Send the error message and the image number back to the main thread
             cconn.send((e, i))
             break
+            
