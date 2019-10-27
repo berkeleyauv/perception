@@ -23,18 +23,27 @@ class GateTask(TaskPerceiver):
 			np.array([100, 100, 100]), np.array([255, 255, 255]))
 		_, contours, _ = cv.findContours(mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
 		num_of_cnt = 2
+		centers = np.array([[]])
 		while contours and num_of_cnt:
 			cnt = max(contours, key=self.findStraightness)#lambda x: cv.minAreaRect(x)[1][0] * cv.minAreaRect(x)[1][1])
 			rect = cv.minAreaRect(cnt)
+			if centers.size == 0:
+				centers = np.array([rect[0]])
+			else:
+				centers = np.append(centers, np.array([rect[0]]), axis=0)
 			boxpts = cv.boxPoints(rect)
 			box = np.int0(boxpts)
 			cv.drawContours(stacked_filter_frames,[box],0,(0,0,255),5)
 			for corner in boxpts:
 				cv.circle(stacked_filter_frames, (corner[0], corner[1]), 10, (0,0,255), -1)
-			i = [True if e is cnt else False for e in contours]
-			index = i.index(True)
+			find_index = [True if e is cnt else False for e in contours]
+			index = find_index.index(True)
 			contours.pop(index)
 			num_of_cnt -= 1
+		if centers.size > 2:
+			gate_center = (centers[0] + centers[1]) * 0.5
+			gate_center = (int(gate_center[0]), int(gate_center[1]))
+			cv.circle(stacked_filter_frames, gate_center, 10, (0,255,0), -1)
 		if debug:
 			return ((250, 250), stacked_filter_frames)
 		return (250, 250)
@@ -43,7 +52,7 @@ class GateTask(TaskPerceiver):
 		hull = cv.convexHull(contour, False)
 		contour_area = cv.contourArea(contour)
 		hull_area = cv.contourArea(hull)
-		return 10 * contour_area + 3 * (hull_area - contour_area)
+		return 10 * contour_area + 5 * (hull_area - contour_area)
 
 # this part is temporary and will be covered by other files in the future
 if __name__ == '__main__':
