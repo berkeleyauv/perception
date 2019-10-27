@@ -14,10 +14,16 @@ class GateTask(TaskPerceiver):
 			frame: The background removed frame to analyze
 			debug: Whether or not tot display intermediate images for debugging
 
-		Reurns:
+		Returns:
 			(x,y) coordinate with center of gate
 		"""
-		# FILL IN YOUR FILTER HERE
+		filtered_frame_copies = [filtered_frame for _ in range[10]]
+		np.stack(filtered_frame_copies, axis = -1)
+		mask = cv.inRange(filtered_frame, np.array[190], )
+
+		filtered_frame = combined_filter(frame, display_figs=False)
+		if debug:
+			return ((250, 250), filtered_frame)
 		return (250, 250)
 
 # this part is temporary and will be covered by other files in the future
@@ -33,7 +39,7 @@ if __name__ == '__main__':
 			filtered_frame = combined_filter(frame, display_figs=False)
 
 			### FUNCTION CALL, can change this
-			x, y = gate_task.analyze(filtered_frame, False)
+			(x, y), filtered_frame = gate_task.analyze(frame, True)
 			cv.putText(frame, "x: %.2f" % x + " y: %.2f" % y,
 				(20, frame.shape[0] - 20), cv.FONT_HERSHEY_SIMPLEX,
 				2.0, (0, 165, 255), 3)
@@ -46,4 +52,3 @@ if __name__ == '__main__':
 				break
 		else:
 			ret_tries += 1
-	
