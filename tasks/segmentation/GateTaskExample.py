@@ -13,19 +13,9 @@ class GateTask(TaskPerceiver):
 		Args:
 			frame: The background removed frame to analyze
 			debug: Whether or not tot display intermediate images for debugging
-
-		Returns:
+		Reurns:
 			(x,y) coordinate with center of gate
 		"""
-<<<<<<< HEAD
-		filtered_frame_copies = [filtered_frame for _ in range[10]]
-		np.stack(filtered_frame_copies, axis = -1)
-		mask = cv.inRange(filtered_frame, np.array[190], )
-
-		filtered_frame = combined_filter(frame, display_figs=False)
-		if debug:
-			return ((250, 250), filtered_frame)
-=======
 		filtered_frame = combined_filter(frame, display_figs=False)
 		filtered_frame_copies = [filtered_frame for _ in range(3)]
 		stacked_filter_frames = np.concatenate(filtered_frame_copies, axis = 2)
@@ -46,7 +36,6 @@ class GateTask(TaskPerceiver):
 
 		if debug:
 			return ((250, 250), stacked_filter_frames)
->>>>>>> origin/gate-task-example
 		return (250, 250)
 
 	def findStraightness(self, contour): # output number = contour area/convex area, the bigger the straightest
