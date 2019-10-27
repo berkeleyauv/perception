@@ -31,7 +31,9 @@ class GateTask(TaskPerceiver):
 			cv.drawContours(stacked_filter_frames,[box],0,(0,0,255),5)
 			for corner in boxpts:
 				cv.circle(stacked_filter_frames, (corner[0], corner[1]), 10, (0,0,255), -1)
-			contours.remove(cnt)
+			i = [True if e is cnt else False for e in contours]
+			index = i.index(True)
+			contours.pop(index)
 			num_of_cnt -= 1
 		if debug:
 			return ((250, 250), stacked_filter_frames)
@@ -49,7 +51,7 @@ if __name__ == '__main__':
 	cap = cv.VideoCapture(args[1])
 	ret_tries = True
 	gate_task = GateTask()
-	once = False
+	# once = False
 	while 1 and ret_tries < 50:
 		ret, frame = cap.read()
 		if ret:
@@ -63,9 +65,9 @@ if __name__ == '__main__':
 				2.0, (0, 165, 255), 3)
 			cv.imshow('original', frame)
 			cv.imshow('filtered_frame', filtered_frame)
-			if not once:
-				print(filtered_frame)
-				once = True
+			# if not once:
+			# 	print(filtered_frame)
+			# 	once = True
 			ret_tries = 0
 			k = cv.waitKey(60) & 0xff
 			if k == 27:
