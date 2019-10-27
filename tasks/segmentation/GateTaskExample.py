@@ -22,18 +22,17 @@ class GateTask(TaskPerceiver):
 		mask = cv.inRange(stacked_filter_frames,
 			np.array([100, 100, 100]), np.array([255, 255, 255]))
 		_, contours, _ = cv.findContours(mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-		if contours:
+		num_of_cnt = 2
+		while contours and num_of_cnt:
 			cnt = max(contours, key=self.findStraightness)#lambda x: cv.minAreaRect(x)[1][0] * cv.minAreaRect(x)[1][1])
-			# sorted_straight = sorted(contours, key=self.findStraightness)
-			# sorted_size = sorted(contours, key=cv.contourArea)
-			#todo: use these sorted lists and weights to each value to give two best values
 			rect = cv.minAreaRect(cnt)
 			boxpts = cv.boxPoints(rect)
 			box = np.int0(boxpts)
 			cv.drawContours(stacked_filter_frames,[box],0,(0,0,255),5)
 			for corner in boxpts:
 				cv.circle(stacked_filter_frames, (corner[0], corner[1]), 10, (0,0,255), -1)
-
+			contours.remove(cnt)
+			num_of_cnt -= 1
 		if debug:
 			return ((250, 250), stacked_filter_frames)
 		return (250, 250)
