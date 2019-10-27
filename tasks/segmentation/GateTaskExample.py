@@ -17,6 +17,7 @@ class GateTask(TaskPerceiver):
 		Returns:
 			(x,y) coordinate with center of gate
 		"""
+<<<<<<< HEAD
 		filtered_frame_copies = [filtered_frame for _ in range[10]]
 		np.stack(filtered_frame_copies, axis = -1)
 		mask = cv.inRange(filtered_frame, np.array[190], )
@@ -24,7 +25,35 @@ class GateTask(TaskPerceiver):
 		filtered_frame = combined_filter(frame, display_figs=False)
 		if debug:
 			return ((250, 250), filtered_frame)
+=======
+		filtered_frame = combined_filter(frame, display_figs=False)
+		filtered_frame_copies = [filtered_frame for _ in range(3)]
+		stacked_filter_frames = np.concatenate(filtered_frame_copies, axis = 2)
+		mask = cv.inRange(stacked_filter_frames,
+			np.array([100, 100, 100]), np.array([255, 255, 255]))
+		_, contours, _ = cv.findContours(mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+		if contours:
+			cnt = max(contours, key=self.findStraightness)#lambda x: cv.minAreaRect(x)[1][0] * cv.minAreaRect(x)[1][1])
+			# sorted_straight = sorted(contours, key=self.findStraightness)
+			# sorted_size = sorted(contours, key=cv.contourArea)
+			#todo: use these sorted lists and weights to each value to give two best values
+			rect = cv.minAreaRect(cnt)
+			boxpts = cv.boxPoints(rect)
+			box = np.int0(boxpts)
+			cv.drawContours(stacked_filter_frames,[box],0,(0,0,255),5)
+			for corner in boxpts:
+				cv.circle(stacked_filter_frames, (corner[0], corner[1]), 10, (0,0,255), -1)
+
+		if debug:
+			return ((250, 250), stacked_filter_frames)
+>>>>>>> origin/gate-task-example
 		return (250, 250)
+
+	def findStraightness(self, contour): # output number = contour area/convex area, the bigger the straightest
+		hull = cv.convexHull(contour, False)
+		contour_area = cv.contourArea(contour)
+		hull_area = cv.contourArea(hull)
+		return 10 * contour_area + 3 * (hull_area - contour_area)
 
 # this part is temporary and will be covered by other files in the future
 if __name__ == '__main__':
@@ -32,11 +61,12 @@ if __name__ == '__main__':
 	cap = cv.VideoCapture(args[1])
 	ret_tries = True
 	gate_task = GateTask()
+	once = False
 	while 1 and ret_tries < 50:
 		ret, frame = cap.read()
 		if ret:
 			frame = cv.resize(frame, None, fx=0.4, fy=0.4)
-			filtered_frame = combined_filter(frame, display_figs=False)
+
 
 			### FUNCTION CALL, can change this
 			(x, y), filtered_frame = gate_task.analyze(frame, True)
@@ -45,7 +75,9 @@ if __name__ == '__main__':
 				2.0, (0, 165, 255), 3)
 			cv.imshow('original', frame)
 			cv.imshow('filtered_frame', filtered_frame)
-
+			if not once:
+				print(filtered_frame)
+				once = True
 			ret_tries = 0
 			k = cv.waitKey(60) & 0xff
 			if k == 27:
