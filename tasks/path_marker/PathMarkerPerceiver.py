@@ -7,4 +7,3 @@ from TaskPerceiver import TaskPerceiver
 class PathMarkerPerceiver(TaskPerceiver):
     named_tuple = namedtuple("PathMarkerOutput", ["angle"])
     named_tuple_types = {angle: np.float64}
-    
