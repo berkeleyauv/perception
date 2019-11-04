@@ -7,3 +7,4 @@ from TaskPerceiver import TaskPerceiver
 class GatePerceiver(TaskPerceiver):
     named_tuple = namedtuple("GateOutput", ["centerx", "centery"])
     named_tuple_types = {centerx: np.int16, centery: np.int16}
+    
