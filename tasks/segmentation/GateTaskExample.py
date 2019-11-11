@@ -5,10 +5,17 @@ from combinedFilter import init_combined_filter
 import numpy as np
 import cv2 as cv
 import time
+import cProfile
 #from segmentation.aggregateRescaling import init_aggregate_rescaling
 
 class GateTask(TaskPerceiver):
 	__past_centers = []
+	__ema = None
+
+	def __init__(self, alpha):
+		super()
+		self.__alpha = alpha
+
 	def analyze(self, frame: np.ndarray, debug: bool) -> Tuple[float, float]:
 		"""Takes in the background removed image and returns the center between
 		the two gate posts.
@@ -35,13 +42,18 @@ class GateTask(TaskPerceiver):
 			# 	cv.drawContours(stacked_filter_frames,[b],0,(0,0,255),5)
 			if len(centers) >= 2:
 				gate_center = (centers[0] + centers[1]) * 0.5
-				if len(self.__past_centers) < 15:
-					self.__past_centers += [gate_center]
+				if self.__ema is None:
+					self.__ema = gate_center
 				else:
-					self.__past_centers.pop(0)
-					self.__past_centers += [gate_center]
-				gate_center = sum(self.__past_centers) / len(self.__past_centers)
-				gate_center = (int(gate_center[0]), int(gate_center[1]))
+					self.__ema = self.__alpha*gate_center + (1 - self.__alpha)*self.__ema
+				gate_center = (int(self.__ema[0]), int(self.__ema[1]))
+				# if len(self.__past_centers) < 15:
+				# 	self.__past_centers += [gate_center]
+				# else:
+				# 	self.__past_centers.pop(0)
+				# 	self.__past_centers += [gate_center]
+				# gate_center = sum(self.__past_centers) / len(self.__past_centers)
+				# gate_center = (int(gate_center[0]), int(gate_center[1]))
 				cv.circle(stacked_filter_frames, gate_center, 10, (0,255,0), -1)
 
 		if debug:
@@ -59,21 +71,24 @@ if __name__ == '__main__':
 	combined_filter = init_combined_filter()
 	cap = cv.VideoCapture(args[1])
 	ret_tries = 0
-	gate_task = GateTask()
+	gate_task = GateTask(0.1)
 	# once = False
 	start_time = time.time()
 	frame_count = 0
 	while ret_tries < 50:
 		ret, frame = cap.read()
+		if frame_count == 1000:
+			break
 		if ret:
 			frame = cv.resize(frame, None, fx=0.4, fy=0.4)
 
 
 			### FUNCTION CALL, can change this
 			(x, y), filtered_frame = gate_task.analyze(frame, True)
-			cv.putText(frame, "x: %.2f" % x + " y: %.2f" % y,
-				(20, frame.shape[0] - 20), cv.FONT_HERSHEY_SIMPLEX,
-				2.0, (0, 165, 255), 3)
+			# cProfile.run("gate_task.analyze(frame, True)")
+			# cv.putText(frame, "x: %.2f" % x + " y: %.2f" % y,
+			# 	(20, frame.shape[0] - 20), cv.FONT_HERSHEY_SIMPLEX,
+			# 	2.0, (0, 165, 255), 3)
 			cv.imshow('original', frame)
 			cv.imshow('filtered_frame', filtered_frame)
 			# if not once:
