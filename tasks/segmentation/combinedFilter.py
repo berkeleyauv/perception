@@ -2,7 +2,9 @@ import cv2
 import numpy as np
 
 import sys
+import os
 from sys import argv as args
+sys.path.append(os.path.dirname(__file__))
 from aggregateRescaling import init_aggregate_rescaling
 from peak_removal_adaptive_thresholding import filter_out_highest_peak_multidim
 
@@ -20,7 +22,7 @@ def init_combined_filter():
         pca_frame = aggregate_rescaling(frame) # this resizes the frame within its body
 
         __, other_frame = filter_out_highest_peak_multidim(
-                            np.dstack([pca_frame[:,:,0], frame]), 
+                            np.dstack([pca_frame[:,:,0], frame]),
                             custom_weights=custom_weights,
                             print_weights=print_weights)
 

@@ -1,14 +1,17 @@
-from TaskPerceiver import TaskPerceiver
+from GatePerceiver import GatePerceiver
 from typing import Tuple
-from sys import argv as args
-from combinedFilter import init_combined_filter
+import sys
+import os
+sys.path.append(os.path.dirname(__file__))
+
+
+from segmentation.combinedFilter import init_combined_filter
 import numpy as np
 import cv2 as cv
 import time
 import cProfile
-#from segmentation.aggregateRescaling import init_aggregate_rescaling
 
-class GateTask(TaskPerceiver):
+class GateSegmentationAlgo(GatePerceiver):
 	__past_centers = []
 	__ema = None
 
@@ -25,6 +28,7 @@ class GateTask(TaskPerceiver):
 		Reurns:
 			(x,y) coordinate with center of gate
 		"""
+		gate_center = self.output_class(250, 250)
 		filtered_frame = combined_filter(frame, display_figs=False)
 		filtered_frame_copies = [filtered_frame for _ in range(3)]
 		stacked_filter_frames = np.concatenate(filtered_frame_copies, axis = 2)
@@ -36,10 +40,10 @@ class GateTask(TaskPerceiver):
 			cnts = contours[:2]
 			rects = [cv.minAreaRect(c) for c in cnts]
 			centers = [np.array(r[0]) for r in rects]
-			# boxpts = [cv.boxPoints(r) for r in rects]
-			# box = [np.int0(b) for b in boxpts]
-			# for b in box:
-			# 	cv.drawContours(stacked_filter_frames,[b],0,(0,0,255),5)
+			boxpts = [cv.boxPoints(r) for r in rects]
+			box = [np.int0(b) for b in boxpts]
+			for b in box:
+				cv.drawContours(stacked_filter_frames,[b],0,(0,0,255),5)
 			if len(centers) >= 2:
 				gate_center = (centers[0] + centers[1]) * 0.5
 				if self.__ema is None:
@@ -57,8 +61,8 @@ class GateTask(TaskPerceiver):
 				cv.circle(stacked_filter_frames, gate_center, 10, (0,255,0), -1)
 
 		if debug:
-			return ((250, 250), stacked_filter_frames)
-		return (250, 250)
+			return (self.output_class(gate_center[0], gate_center[1]), stacked_filter_frames)
+		return self.output_class(gate_center[0], gate_center[1])
 
 	def findStraightness(self, contour): # output number = contour area/convex area, the bigger the straightest
 		hull = cv.convexHull(contour, False)
@@ -69,9 +73,9 @@ class GateTask(TaskPerceiver):
 # this part is temporary and will be covered by other files in the future
 if __name__ == '__main__':
 	combined_filter = init_combined_filter()
-	cap = cv.VideoCapture(args[1])
+	cap = cv.VideoCapture(sys.argv[1])
 	ret_tries = 0
-	gate_task = GateTask(0.1)
+	gate_task = GateSegmentationAlgo(0.1)
 	# once = False
 	start_time = time.time()
 	frame_count = 0
@@ -84,7 +88,7 @@ if __name__ == '__main__':
 
 
 			### FUNCTION CALL, can change this
-			(x, y), filtered_frame = gate_task.analyze(frame, True)
+			center, filtered_frame = gate_task.analyze(frame, True)
 			# cProfile.run("gate_task.analyze(frame, True)")
 			# cv.putText(frame, "x: %.2f" % x + " y: %.2f" % y,
 			# 	(20, frame.shape[0] - 20), cv.FONT_HERSHEY_SIMPLEX,
