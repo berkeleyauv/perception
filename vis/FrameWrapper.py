@@ -20,7 +20,7 @@ class FrameWrapper():
     VIDEO_EXTS = ['mp4', 'avi']
     IMG_EXTS = ['jpg', 'png']
 
-    VIDEO_TRIES = 20
+    VIDEO_TRIES = 200
     WEBCAM_TRIES = 10
 
     def __init__(self, filenames, resize=1):
@@ -98,6 +98,6 @@ class FrameWrapper():
         elif extension in self.IMG_EXTS:
             self.next_data = ('i', cv2.imread(filename))
         else:
-            print("Unknown file format:", f)
+            print("Unknown file format:", extension)
 
         self.has_next = True

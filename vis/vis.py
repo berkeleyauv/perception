@@ -1,10 +1,15 @@
 import argparse
 from pathlib import Path
-
+from FrameWrapper import FrameWrapper
+import cv2 as cv
+import sys
+import importlib.util
+import importlib
+#import TestTasks.testAlgo
 # Collect available datasets
 data_sources = ['webcam']
-datasets = Path('../../datasets')
-for file in Folder.iterdir():
+datasets = Path('./datasets')
+for file in datasets.iterdir():
     data_sources.append(file.stem)
 
 # Parse arguments
@@ -13,12 +18,15 @@ parser.add_argument('--data', default = 'webcam', type=str, choices = data_sourc
 parser.add_argument('--algorithm', type=str)
 args = parser.parse_args()
 
-# Initialize image source
-if args.data == "webcam":
-    data = None 
-else:
-    data = None # datasets.joinpath(args.data).iterdir()
+# Get algorithm module
+spec = importlib.util.spec_from_file_location("module.name", "{}.TestAlgo".format(args.algorithm))
+algorithm = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(algorithm)
 
+# Initialize image source
+data = FrameWrapper(data_sources, .5)
+
+algorithm = algorithm.TaskPerceiver()
 # Main Loop
 for frame in data:
     #TODO: benchmarking
