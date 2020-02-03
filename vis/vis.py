@@ -19,14 +19,16 @@ parser.add_argument('--algorithm', type=str)
 args = parser.parse_args()
 
 # Get algorithm module
-spec = importlib.util.spec_from_file_location("module.name", "{}.TestAlgo".format(args.algorithm))
+"""
+spec = importlib.util.spec_from_file_location("module.name", "TestTasks/{}".format(args.algorithm))
 algorithm = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(algorithm)
-
+"""
+exec("from TestTasks.{} import {} as Algorithm".format(args.algorithm, args.algorithm))
 # Initialize image source
 data = FrameWrapper(data_sources, .5)
 
-algorithm = algorithm.TaskPerceiver()
+algorithm = Algorithm()
 # Main Loop
 for frame in data:
     #TODO: benchmarking
