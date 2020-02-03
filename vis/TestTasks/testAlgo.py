@@ -7,4 +7,4 @@ import cv2 as cv
 
 class TestAlgo(TaskPerceiver):
 	def analyze(self, frame: np.ndarray, debug: bool) -> Tuple[np.ndarray, np.ndarray]:
-		return frame, [np.array(np.flip(frame,1))]
+		return frame, [cv.cvtColor(frame, cv.COLOR_BGR2GRAY), cv.Canny(frame, 100, 200)]

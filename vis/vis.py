@@ -5,12 +5,13 @@ import cv2 as cv
 import sys
 import importlib.util
 import importlib
+import yukiVisualizer
 #import TestTasks.testAlgo
 # Collect available datasets
 data_sources = ['webcam']
-datasets = Path('./datasets')
-for file in datasets.iterdir():
-    data_sources.append(file.stem)
+#datasets = Path('./datasets')
+#for file in datasets.iterdir():
+#    data_sources.append(file.stem)
 
 # Parse arguments
 parser = argparse.ArgumentParser(description = 'Visualizes perception algorithms.')
@@ -26,7 +27,9 @@ spec.loader.exec_module(algorithm)
 """
 exec("from TestTasks.{} import {} as Algorithm".format(args.algorithm, args.algorithm))
 # Initialize image source
-data = FrameWrapper(data_sources, .5)
+print(data_sources)
+data_sources = ["GOPR1142-gate.mp4"]
+data = FrameWrapper(data_sources, .25)
 
 algorithm = Algorithm()
 # Main Loop
@@ -36,7 +39,7 @@ for frame in data:
     state, debug_frames = algorithm.analyze(frame, debug=True)
 
     cv.imshow('original', frame)
-    cv.imshow('filtered_frame', debug_frames[0]) # TODO: Yuki's visualizer here
-
+    #cv.imshow('filtered_frame', debug_frames) # TODO: Yuki's visualizer here
+    yukiVisualizer.display(debug_frames)
     if cv.waitKey(60) & 0xff == 27:
         break
