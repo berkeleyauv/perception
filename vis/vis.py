@@ -9,9 +9,9 @@ import yukiVisualizer
 #import TestTasks.testAlgo
 # Collect available datasets
 data_sources = ['webcam']
-#datasets = Path('./datasets')
-#for file in datasets.iterdir():
-#    data_sources.append(file.stem)
+datasets = Path('./datasets')
+for file in datasets.iterdir():
+    data_sources.append(file.stem)
 
 # Parse arguments
 parser = argparse.ArgumentParser(description = 'Visualizes perception algorithms.')
@@ -20,15 +20,10 @@ parser.add_argument('--algorithm', type=str)
 args = parser.parse_args()
 
 # Get algorithm module
-"""
-spec = importlib.util.spec_from_file_location("module.name", "TestTasks/{}".format(args.algorithm))
-algorithm = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(algorithm)
-"""
 exec("from TestTasks.{} import {} as Algorithm".format(args.algorithm, args.algorithm))
+
 # Initialize image source
-print(data_sources)
-data_sources = ["GOPR1142-gate.mp4"]
+data_sources = ['./datasets/{}.mp4'.format(args.data)]
 data = FrameWrapper(data_sources, .25)
 
 algorithm = Algorithm()
@@ -39,7 +34,7 @@ for frame in data:
     state, debug_frames = algorithm.analyze(frame, debug=True)
 
     cv.imshow('original', frame)
-    #cv.imshow('filtered_frame', debug_frames) # TODO: Yuki's visualizer here
-    yukiVisualizer.display(debug_frames)
+
+    yukiVisualizer.display(debug_frames[:2])
     if cv.waitKey(60) & 0xff == 27:
         break

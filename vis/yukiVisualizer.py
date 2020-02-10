@@ -26,7 +26,7 @@ def display(frames):
 	rows = math.ceil(num_frames/columns)
 
 	frame_num = 0
-	to_show = None
+	to_show = 0
 	for _ in range(rows):
 		this_row = frames[frame_num]
 		for _ in range(columns - 1):
@@ -37,7 +37,7 @@ def display(frames):
 			else:
 				this_row = np.hstack((this_row, frames[0]))
 
-		if to_show:
+		if type(to_show) != int:
 			to_show = np.vstack((to_show, this_row))
 		else:
 			to_show = this_row

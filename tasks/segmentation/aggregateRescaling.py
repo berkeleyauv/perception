@@ -15,8 +15,7 @@ def init_aggregate_rescaling(show_frame=True):
 		nonlocal only_once
 		nonlocal weights
 		nonlocal max_min
-		#print(only_once, max_min, weights)
-		#frame = cv.resize(frame, (0,0), fx=0.5, fy=0.5)
+
 		frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 
 		r, c, d = frame.shape

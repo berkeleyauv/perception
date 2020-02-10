@@ -26,7 +26,7 @@ class FrameWrapper():
     def __init__(self, filenames, resize=1):
         self.filenames = filenames # Get this list of relative paths to files from vis
         # There aren't any checks for resize==1 to improve speed b/c this expects resize != 1
-        self.resize = resize 
+        self.resize = resize
 
     def __iter__(self):
         self.index = -1
@@ -37,7 +37,7 @@ class FrameWrapper():
     def __next__(self):
         if not self.has_next:
             raise StopIteration
-            
+
         while self.index < len(self.filenames):
             if self.next_data[0] == "v": # Video
                 # Try to get a frame out at most VIDEO_TRIES times.
@@ -72,7 +72,7 @@ class FrameWrapper():
         raise StopIteration
 
     def next_data_obj(self):
-        """ 
+        """
         Helper function for getting the next object (video, image, webcam) when
         the previous one is exhausted.
         """
