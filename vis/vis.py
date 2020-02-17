@@ -5,7 +5,7 @@ import cv2 as cv
 import sys
 import importlib.util
 import importlib
-import yukiVisualizer
+from yukiVisualizer import Visualizer
 #import TestTasks.testAlgo
 # Collect available datasets
 data_sources = ['webcam']
@@ -27,14 +27,14 @@ data_sources = ['./datasets/{}.mp4'.format(args.data)]
 data = FrameWrapper(data_sources, .25)
 
 algorithm = Algorithm()
+yukiVisualizer = Visualizer(algorithm.var_info())
 # Main Loop
 for frame in data:
     #TODO: benchmarking
 
-    state, debug_frames = algorithm.analyze(frame, debug=True)
+    state, debug_frames = algorithm.analyze(frame, debug=True, slider_vals=yukiVisualizer.update_vars())
+    # cv.imshow('original', frame)
+    yukiVisualizer.display(debug_frames)
 
-    cv.imshow('original', frame)
-
-    yukiVisualizer.display(debug_frames[:2])
-    if cv.waitKey(60) & 0xff == 27:
+    if cv.waitKey(60) & 0xff == 113:
         break

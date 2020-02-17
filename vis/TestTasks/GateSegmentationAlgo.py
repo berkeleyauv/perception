@@ -65,7 +65,7 @@ class GateSegmentationAlgo(TaskPerceiver):
 				cv.circle(stacked_filter_frames, gate_center, 10, (0,255,0), -1)
 
 		if debug:
-			return (self.output_class(gate_center[0], gate_center[1]), stacked_filter_frames)
+			return (self.output_class(gate_center[0], gate_center[1]), [stacked_filter_frames])
 		return self.output_class(gate_center[0], gate_center[1])
 
 	def findStraightness(self, contour): # output number = contour area/convex area, the bigger the straightest
