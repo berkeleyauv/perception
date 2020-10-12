@@ -4,7 +4,6 @@ import sys
 import os
 from pathlib import Path
 from collections import namedtuple
-
 sys.path.append(str(Path(__file__).parents[2]) + '/tasks')
 
 from segmentation.combinedFilter import init_combined_filter
@@ -12,7 +11,6 @@ import numpy as np
 import cv2 as cv
 import time
 import cProfile
-
 
 class GateSegmentationAlgo(TaskPerceiver):
     __past_centers = []
