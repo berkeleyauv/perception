@@ -1,11 +1,13 @@
 # Perception Code Overview
 
+Code Quality [![CodeFactor](https://www.codefactor.io/repository/github/berkeleyauv/perception/badge)](https://www.codefactor.io/repository/github/berkeleyauv/perception)
+
 ## Installation
 
 We will use Conda for managing environments. We recommend installing Miniconda for Python 3.8 [here](https://docs.conda.io/en/latest/miniconda.html).
 Then create an environment with
 
-    conda create -n urobotics python3.7
+    conda create -n urobotics python=3.7
 
 activate it with
 
