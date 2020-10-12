@@ -36,24 +36,22 @@ class Visualizer:
 
 		columns = math.ceil(num_frames/math.sqrt(num_frames))
 		rows = math.ceil(num_frames/columns)
-		print('cols', columns, 'rows', rows, 'num_frames', num_frames)
 		frame_num = 0
 		to_show = 0
 		for j in range(rows):
 			this_row = frames[frame_num]
-			for i in range(1, columns):
+			for i in range(columns * j + 1, columns * (j + 1)):
 				frame_num += 1
-				print('frame_num', frame_num, j, i)
 				if frame_num < num_frames:
-					#print(this_row.shape, frames[frame_num].shape)
-					this_row = np.hstack((this_row, frames[frame_num]))
+					to_add = frames[frame_num]
+					this_row = np.hstack((this_row, to_add))
 				else:
-					print("here!")
 					this_row = np.hstack((this_row, np.zeros(frames[0].shape)))
 			if type(to_show) != int:
 				to_show = np.vstack((to_show, this_row))
 			else:
 				to_show = this_row
+			frame_num += 1
 		cv.imshow('Debug Frames', to_show)
 
 	def update_vars(self) -> Dict[str, int]:

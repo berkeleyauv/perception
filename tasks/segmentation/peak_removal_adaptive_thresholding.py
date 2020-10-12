@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks, peak_widths
-
+from sys import argv as args
 ########################################################################
 # An attempt at an adaptive thresholding algorithm based on the frequency
 # of pixel values ("peaks" if looking at a histogram of # pixels vs pixel value of a frame)
@@ -522,6 +522,7 @@ def k_means_segmentation(votes, frame_shape, num_groups=2, percentile=10):
 
 if __name__ == "__main__":
     # For testing porpoises
+    cap = cv2.VideoCapture(args[1])
     ret, frame = cap.read()
     out = cv2.VideoWriter('out.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 30.0, (int(frame.shape[1]*0.4), int(frame.shape[0]*0.4)))
 
