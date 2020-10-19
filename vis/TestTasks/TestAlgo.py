@@ -13,4 +13,6 @@ class TestAlgo(TaskPerceiver):
 
 		return frame, [cv.cvtColor(frame, cv.COLOR_BGR2GRAY), cv.flip(cv.cvtColor(frame, cv.COLOR_BGR2GRAY), cv.ROTATE_180),
 					   cv.Canny(frame, slider_vals['canny_low'], slider_vals['canny_high']),
-					   cv.flip(cv.Canny(frame, slider_vals['canny_low'], slider_vals['canny_high']), 0)]
+					   cv.flip(cv.Canny(frame, slider_vals['canny_low'], slider_vals['canny_high']), 0),
+					   cv.flip(cv.cvtColor(frame, cv.COLOR_BGR2GRAY), 0)]
+					   #cv.flip(cv.Canny(frame, slider_vals['canny_low'], slider_vals['canny_high']), cv.ROTATE_180)]

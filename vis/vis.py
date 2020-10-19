@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 from FrameWrapper import FrameWrapper
 import cv2 as cv
-from yukiVisualizer import Visualizer
+from window_builder import Visualizer
 
 # import TestTasks.testAlgo
 # Collect available datasets
@@ -28,16 +28,16 @@ data = FrameWrapper(data_sources, 0.25)
 
 # TODO: This is undefined and should be added later.
 algorithm = Algorithm()
-yukiVisualizer = Visualizer(algorithm.var_info())
+window_builder = Visualizer(algorithm.var_info())
 # Main Loop
 for frame in data:
     # TODO: benchmarking
 
     state, debug_frames = algorithm.analyze(
-        frame, debug=True, slider_vals=yukiVisualizer.update_vars()
+        frame, debug=True, slider_vals=window_builder.update_vars()
     )
     # cv.imshow('original', frame)
-    yukiVisualizer.display(debug_frames)
+    window_builder.display(debug_frames)
 
     if cv.waitKey(60) & 0xFF == 113:
         break
