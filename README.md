@@ -1,11 +1,13 @@
 # Perception Code Overview
 
+Code Quality [![CodeFactor](https://www.codefactor.io/repository/github/berkeleyauv/perception/badge)](https://www.codefactor.io/repository/github/berkeleyauv/perception)
+
 ## Installation
 
 We will use Conda for managing environments. We recommend installing Miniconda for Python 3.8 [here](https://docs.conda.io/en/latest/miniconda.html).
 Then create an environment with
 
-    conda create -n urobotics python3.7
+    conda create -n urobotics python=3.7
 
 activate it with
 
@@ -13,7 +15,18 @@ activate it with
 
 and install all dependencies with
 
-    pip install -r requirements.txt
+    pip3 install -r requirements.txt
+
+Then clone the repo in a directory of your choice
+
+    git clone https://github.com/berkeleyauv/perception.git
+
+and install it
+
+    pip3 install -e perception/
+
+Also, our training data is stored here https://www.dropbox.com/sh/rrbfqfutrmifrxs/AAAfXxlcCtWZmUELp4wXyTIxa?dl=0 so download it and unzip it in the same folder as `perception`.
+
 
 ## misc:
 Misc code, camera calibration etc.
