@@ -11,6 +11,6 @@ class TestAlgo(TaskPerceiver):
 
 	def analyze(self, frame: np.ndarray, debug: bool, slider_vals: Dict[str, int]):
 
-		return frame, [cv.cvtColor(frame, cv.COLOR_BGR2GRAY), cv.flip(cv.cvtColor(frame, cv.COLOR_BGR2GRAY), cv.ROTATE_180),
+		return frame, [frame, cv.cvtColor(frame, cv.COLOR_BGR2GRAY), cv.flip(cv.cvtColor(frame, cv.COLOR_BGR2GRAY), cv.ROTATE_180),
 					   cv.Canny(frame, slider_vals['canny_low'], slider_vals['canny_high']),
 					   cv.flip(cv.Canny(frame, slider_vals['canny_low'], slider_vals['canny_high']), 0)]
