@@ -3,11 +3,8 @@ import cv2 as cv
 import math
 from typing import Dict, Tuple, List
 
-# Get input from webcam
-#cap = cv.VideoCapture(0)
 def nothing(x):
 	pass
-#cap = cv.VideoCapture(0)
 
 class Visualizer:
 	def __init__(self, vars: Dict[str, Tuple[Tuple[int, int], int]]):

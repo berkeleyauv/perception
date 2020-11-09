@@ -1,25 +1,15 @@
 import argparse
-from pathlib import Path
 from FrameWrapper import FrameWrapper
 import cv2 as cv
 from window_builder import Visualizer
 import cProfile as cp
 import pstats
 
-# import TestTasks.testAlgo
-# Collect available datasets
-"""
-data_sources = ['webcam']
-datasets = Path('./datasets')
-for file in datasets.iterdir():
-    data_sources.append(file.stem)
-"""
-
 # Parse arguments
 parser = argparse.ArgumentParser(description='Visualizes perception algorithms.')
 parser.add_argument(
     '--data', default='webcam', type=str
-)  # do this later #, choices = data_sources)
+)
 parser.add_argument('--algorithm', type=str)
 parser.add_argument('--save_video', action='store_true')
 args = parser.parse_args()
@@ -31,19 +21,16 @@ exec("from TestTasks.{} import {} as Algorithm".format(args.algorithm, args.algo
 data_sources = [args.data]
 data = FrameWrapper(data_sources, 0.25)
 
-# TODO: This is undefined and should be added later.
 algorithm = Algorithm()
 window_builder = Visualizer(algorithm.var_info())
 video_frames = []
 # Main Loop
 def main():
     for frame in data:
-        # TODO: benchmarking
 
         state, debug_frames = algorithm.analyze(
             frame, debug=True, slider_vals=window_builder.update_vars()
         )
-        # cv.imshow('original', frame)
         to_show = window_builder.display(debug_frames)
         cv.imshow('Debug Frames', to_show)
         if args.save_video:
