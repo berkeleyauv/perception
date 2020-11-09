@@ -1,5 +1,6 @@
 from typing import Any, Dict, Tuple
 import numpy as np
+
 class TaskPerceiver:
 
     def __init__(self, **kwargs):

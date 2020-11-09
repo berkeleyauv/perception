@@ -1,7 +1,7 @@
 import numpy as np
 import cv2 as cv
 import math
-from typing import Dict, Tuple
+from typing import Dict, Tuple, List
 
 # Get input from webcam
 #cap = cv.VideoCapture(0)
@@ -19,9 +19,18 @@ class Visualizer:
 			cv.createTrackbar(name, 'Debug Frames', low_range, high_range, nothing)
 			cv.setTrackbarPos(name, 'Debug Frames', default_val)
 
-	def display(self, frames, triple=False):
+	def three_stack(self, frames: List[np.ndarray]) -> List[np.ndarray]:
+		newLst = []
+		for frame in frames:
+			if len(frame.shape) == 2 or frame.shape[2] == 1:
+				frame = np.stack((frame, frame, frame), axis=2)
+			newLst.append((frame))
+		return newLst
+
+	def display(self, frames: List[np.ndarray]) -> np.ndarray:
 		num_frames = len(frames)
 		assert (num_frames > 0 and num_frames <= 9), 'Invalid number of frames!'
+		frames = self.three_stack(frames)
 
 		columns = math.ceil(num_frames/math.sqrt(num_frames))
 		rows = math.ceil(num_frames/columns)
@@ -41,45 +50,10 @@ class Visualizer:
 			else:
 				to_show = this_row
 			frame_num += 1
-		cv.imshow('Debug Frames', to_show)
+		return to_show
 
 	def update_vars(self) -> Dict[str, int]:
 		variable_values = {}
 		for var in self.variables:
 			variable_values[var] = cv.getTrackbarPos(var, 'Debug Frames')
 		return variable_values
-
-# Continue until user ends program
-if __name__ == '__main__':
-	while (True):
-	    ret, frame = cap.read()
-
-	    frame = cv.resize(frame, (int(frame.shape[1]*1/2), int(frame.shape[0]*1/2)), interpolation = cv.INTER_AREA) # Downsize image
-	    hsv = cv.cvtColor(frame,cv.COLOR_BGR2HSV)
-
-	    hs = cv.getTrackbarPos('blow','contours')
-	    ss = cv.getTrackbarPos('glow','contours')
-	    vs = cv.getTrackbarPos('rlow','contours')
-	    hl = cv.getTrackbarPos('bhigh','contours')
-	    sl = cv.getTrackbarPos('ghigh','contours')
-	    vl = cv.getTrackbarPos('rhigh','contours')
-
-	    mask = cv.inRange(hsv, np.array([hs,ss,vs]), np.array([hl,sl,vl]))
-	    res = cv.bitwise_and(frame,frame, mask= mask)
-	    #cv.imshow('Viz', np.vstack((np.hstack((res, res, res)), np.hstack((res, res, res)), np.hstack((res, res, res)))))
-
-
-
-
-	    #cv.imshow('nine', np.vstack((np.hstack((res, res, res)), np.hstack((res, res, res)), np.hstack((res, res, res)))))
-
-
-
-	    if cv.waitKey(1) and 0xFF == ord('q'): # Exit
-	        break
-
-
-
-	#Cleanup
-	cap.release()
-	cv.destroyAllWindows()
