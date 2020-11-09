@@ -5,8 +5,16 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("file", help="file")
 args = parser.parse_args()
+from dark_channel.handler import process_frame as dark_channel
 
 
+
+def DarkChannel(im):
+    b,g,r = cv.split(im)
+    dc = cv.min(cv.min(r,g),b);
+    kernel = cv.getStructuringElement(cv.MORPH_RECT,(im.shape[0],im.shape[1]))
+    dark = cv.erode(dc,kernel)
+    return dark
 
 def resize_frame(frame,ratio = 0.4):
     return cv.resize(frame,(int(frame.shape[1]*ratio),int(frame.shape[0]*ratio)))
@@ -64,7 +72,10 @@ if __name__ == '__main__':
     while(True):
         ret, frame = cap.read()
         if ret:
-            cv.imshow('test',analyze(resize_frame(frame)))
+            frame = resize_frame(frame, 0.25)
+            dark = dark_channel(frame)[0]
+            # cv.imshow('OTSU+Dark',analyze(dark))
+            show_frames({'OTSU':analyze(frame),'dark':dark,'OTSU+DARK':analyze(dark),'orig':frame})
             if cv.waitKey(1) & 0xFF == ord('q'):
                 break
             if cv.waitKey(32) == ord(' '):
