@@ -1,4 +1,6 @@
 import argparse
+import os
+
 from FrameWrapper import FrameWrapper
 import cv2 as cv
 from window_builder import Visualizer
@@ -18,12 +20,19 @@ args = parser.parse_args()
 exec("from TestTasks.{} import {} as Algorithm".format(args.algorithm, args.algorithm))
 
 # Initialize image source
-data_sources = [args.data]
+# detects args.data, get a list of all file directory when given a directory
+# change data_source to a list of all files in the directory
+if os.path.isfile(args.data):
+    data_sources = [args.data]
+elif os.path.isdir(args.data):
+    data_sources = os.listdir(args.data)
 data = FrameWrapper(data_sources, 0.25)
 
 algorithm = Algorithm()
 window_builder = Visualizer(algorithm.var_info())
 video_frames = []
+
+
 # Main Loop
 def main():
     for frame in data:
@@ -38,9 +47,9 @@ def main():
 
         key_pressed = cv.waitKey(60) & 0xFF
         if key_pressed == 112:
-            cv.waitKey(0) # pause
+            cv.waitKey(0)  # pause
         if key_pressed == 113:
-            break # quit
+            break  # quit
 
 
 cp.run('main()', 'algo_stats')
