@@ -5,6 +5,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import matplotlib.ticker as ticker
 from matplotlib.figure import Figure
 from typing import Dict
+from .combinedFilterDepthMap import init_combined_filter
 from TaskPerceiver import TaskPerceiver
 
 def number_to_integral(number):
@@ -95,7 +96,13 @@ class DepthMap(TaskPerceiver):
         A = haze_removal_object.get_atmosphere(dark_channel)
         t = haze_removal_object.get_transmission(dark_channel, A)
         depth_map = np.log(t) / -slider_vals['beta']
-        histogram = output_histogram(frame)
-        return depth_map, [histogram, t, depth_map]
+
+        # PCA Experimentation
+        stack = np.dstack((frame, t)).astype(np.uint8)
+        combined_filter = init_combined_filter()
+        depth_combined_pca = combined_filter(stack)
+
+        pca = combined_filter(frame)
+        return depth_map, [t, depth_combined_pca[:,:,0], depth_map, pca[:,:,0]]
 
 
