@@ -18,7 +18,7 @@ class GateSegmentationAlgo(GatePerceiver):
     
     def __init__(self):
         super()
-        
+        self.gate_center = self.output_class(250, 250)
 
         
     def analyze(self, frame: np.ndarray, debug: bool) -> Tuple[float, float]:
@@ -31,7 +31,6 @@ class GateSegmentationAlgo(GatePerceiver):
 			(x,y) coordinate with center of gate
 		"""
         global prvs
-        gate_center = self.output_class(250, 250)
         filtered_frame = combined_filter(frame, display_figs=False)
 		
         max_brightness = max([b for b in filtered_frame[:, :, 0][0]])
@@ -64,28 +63,36 @@ class GateSegmentationAlgo(GatePerceiver):
             cv.rectangle(debug_filter, (x1, y1), (x1+w1, y1+h1), (0,255,0), 2)
             cv.rectangle(debug_filter, (x2, y2), (x2+w2, y2+h2), (0,255,0), 2)
 
-            # drawing center dot
-            center_x, center_y = (x1+x2)//2, ((y1+h1//2)+(y2+h2//2))//2
-            gate_center = self.get_actual_center(center_x, center_y)
-            cv.circle(debug_filter, gate_center, 5, (0,0,255), -1)
+            # # drawing center dot
+            # center_x, center_y = (x1+x2)//2, ((y1+h1//2)+(y2+h2//2))//2
+            # self.gate_center = self.get_actual_center(center_x, center_y)
+            # cv.circle(debug_filter, self.gate_center, 5, (0,0,255), -1)
 
+            # dense optical flow
             next = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
             flow = cv.calcOpticalFlowFarneback(prvs,next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
             mag, ang = cv.cartToPolar(flow[...,0], flow[...,1])
             mag = cv.normalize(mag,None,0,255,cv.NORM_MINMAX)
-            if np.mean(mag) > 40:
-                gate_center = (gate_center[0] - mag * math.sin(np.mean(ang)), gate_center[1] + mag * math.cos(np.mean(ang)))
+            if np.mean(mag) < 40:
+                center_x, center_y = (x1+x2)//2, ((y1+h1//2)+(y2+h2//2))//2
+                self.gate_center = self.get_actual_center(center_x, center_y)
+            else:
+                self.gate_center = (int(self.gate_center[0] - np.mean(mag) * math.sin(np.mean(ang))), \
+                                int(self.gate_center[1] + np.mean(mag) * math.cos(np.mean(ang))))
+                cv.circle(debug_filter, self.gate_center, 5, (255,0,0), -1)
+            cv.circle(debug_filter, self.gate_center, 5, (0,0,255), -1)
+            ang = ang*180/np.pi
             print('mag:', np.mean(mag), '\tang:', np.mean(ang))
-            ang = ang*180/np.pi/2
-            hsv[...,0] = ang
-            hsv[...,2] = mag
-            bgr = cv.cvtColor(hsv,cv.COLOR_HSV2BGR)
-            cv.imshow('dense optical flow',bgr)
+            # hsv[...,0] = ang
+            # hsv[...,2] = mag
+            # bgr = cv.cvtColor(hsv,cv.COLOR_HSV2BGR)
+            # cv.imshow('dense optical flow',bgr)
             prvs = next
+
             
         if debug:
-            return (self.output_class(gate_center[0], gate_center[1]), debug_filter)
-        return self.output_class(gate_center[0], gate_center[1])
+            return (self.output_class(self.gate_center[0], self.gate_center[1]), debug_filter)
+        return self.output_class(self.gate_center[0], self.gate_center[1])
         
     def get_actual_center(self, center_x, center_y):
 		# get starting center location, averaging over the first 2510 frames
