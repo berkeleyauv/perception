@@ -18,9 +18,6 @@ class GateSegmentationAlgo(GatePerceiver):
     
     def __init__(self):
         super()
-        self.gate_center = self.output_class(250, 250)
-        # self.use_optical_flow = False
-        # self.optical_flow_c = 0.05
         self.combined_filter = init_combined_filter()
 
     def analyze(self, frame: np.ndarray, debug: bool) -> Tuple[float, float]:
