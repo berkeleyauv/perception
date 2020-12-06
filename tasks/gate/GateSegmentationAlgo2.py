@@ -19,6 +19,8 @@ class GateSegmentationAlgo(GatePerceiver):
     def __init__(self):
         super()
         self.gate_center = self.output_class(250, 250)
+        self.use_optical_flow = False
+        self.optical_flow_c = 0.05
 
         
     def analyze(self, frame: np.ndarray, debug: bool) -> Tuple[float, float]:
@@ -58,8 +60,10 @@ class GateSegmentationAlgo(GatePerceiver):
             area_diff_copy = sorted([area_diff[i] for i in largest_area_idx])
             min_i1, min_i2 = area_diff.index(area_diff_copy[0]), area_diff.index(area_diff_copy[1])
 			
-            (x1, y1, w1, h1) = cv.boundingRect(cnt[min_i1])
-            (x2, y2, w2, h2) = cv.boundingRect(cnt[min_i2])
+            rect1 = cv.boundingRect(cnt[min_i1])
+            rect2 = cv.boundingRect(cnt[min_i2])
+            x1, y1, w1, h1 = rect1
+            x2, y2, w2, h2 = rect2
             cv.rectangle(debug_filter, (x1, y1), (x1+w1, y1+h1), (0,255,0), 2)
             cv.rectangle(debug_filter, (x2, y2), (x2+w2, y2+h2), (0,255,0), 2)
 
@@ -69,32 +73,37 @@ class GateSegmentationAlgo(GatePerceiver):
             # cv.circle(debug_filter, self.gate_center, 5, (0,0,255), -1)
 
             # dense optical flow
-            next = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-            flow = cv.calcOpticalFlowFarneback(prvs,next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
-            mag, ang = cv.cartToPolar(flow[...,0], flow[...,1])
-            mag = cv.normalize(mag,None,0,255,cv.NORM_MINMAX)
-            if np.mean(mag) < 40:
-                center_x, center_y = (x1+x2)//2, ((y1+h1//2)+(y2+h2//2))//2
-                self.gate_center = self.get_actual_center(center_x, center_y)
+            # next = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+            # flow = cv.calcOpticalFlowFarneback(prvs,next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+            # mag, ang = cv.cartToPolar(flow[...,0], flow[...,1])
+            # mag = cv.normalize(mag,None,0,255,cv.NORM_MINMAX)
+            # center_x, center_y = (x1+x2)//2, ((y1+h1//2)+(y2+h2//2))//2
+            # if np.mean(mag) < 40 and ((not self.use_optical_flow ) or \
+            #     (self.use_optical_flow and (center_x - self.gate_center[0])**2 + (center_y - self.gate_center[1])**2 < 50)):
+            #         self.gate_center = self.get_actual_center(center_x, center_y)
+            #         cv.circle(debug_filter, self.gate_center, 5, (0,0,255), -1)
+            #         self.use_optical_flow = False
+            # else:
+            #     self.use_optical_flow = True
+            #     self.gate_center = (int(self.gate_center[0] + self.optical_flow_c * np.mean(mag) * math.cos(np.mean(ang))), \
+            #                     int(self.gate_center[1] + self.optical_flow_c * np.mean(mag) * math.sin(np.mean(ang))))
+            #     cv.circle(debug_filter, self.gate_center, 5, (3,186,252), -1)
+            self.gate_center = self.get_center(rect1, rect2, frame)
+            if self.use_optical_flow:
+                cv.circle(debug_filter, self.gate_center, 5, (3,186,252), -1)
             else:
-                self.gate_center = (int(self.gate_center[0] - np.mean(mag) * math.sin(np.mean(ang))), \
-                                int(self.gate_center[1] + np.mean(mag) * math.cos(np.mean(ang))))
-                cv.circle(debug_filter, self.gate_center, 5, (255,0,0), -1)
-            cv.circle(debug_filter, self.gate_center, 5, (0,0,255), -1)
-            ang = ang*180/np.pi
-            print('mag:', np.mean(mag), '\tang:', np.mean(ang))
+                cv.circle(debug_filter, self.gate_center, 5, (0,0,255), -1)
+            # ang = ang*180/np.pi
+            # print('mag:', np.mean(mag), '\tang:', np.mean(ang))
             # hsv[...,0] = ang
             # hsv[...,2] = mag
             # bgr = cv.cvtColor(hsv,cv.COLOR_HSV2BGR)
-            # cv.imshow('dense optical flow',bgr)
-            prvs = next
-
-            
+            # prvs = next
         if debug:
             return (self.output_class(self.gate_center[0], self.gate_center[1]), debug_filter)
         return self.output_class(self.gate_center[0], self.gate_center[1])
         
-    def get_actual_center(self, center_x, center_y):
+    def center_without_optical_flow(self, center_x, center_y):
 		# get starting center location, averaging over the first 2510 frames
         if len(self.center_x_locs) == 0:
             self.center_x_locs.append(center_x)
@@ -118,6 +127,29 @@ class GateSegmentationAlgo(GatePerceiver):
                 center_x, center_y = int(x_temp_avg), int(y_temp_avg)
                 
         return (center_x, center_y)
+    
+    def dense_optical_flow(self, frame, prvs):
+        next = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+        flow = cv.calcOpticalFlowFarneback(prvs,next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+        mag, ang = cv.cartToPolar(flow[...,0], flow[...,1])
+        mag = cv.normalize(mag,None,0,255,cv.NORM_MINMAX)
+        return next, mag, ang
+    
+    def get_center(self, rect1, rect2, rame):
+        global prvs
+        x1, y1, w1, h1 = rect1
+        x2, y2, w2, h2 = rect2
+        center_x, center_y = (x1+x2)//2, ((y1+h1//2)+(y2+h2//2))//2
+        prvs, mag, ang = self.dense_optical_flow(frame, prvs)
+        if np.mean(mag) < 40 and ((not self.use_optical_flow ) or \
+            (self.use_optical_flow and (center_x - self.gate_center[0])**2 + (center_y - self.gate_center[1])**2 < 50)):
+            self.use_optical_flow = False
+            return self.center_without_optical_flow(center_x, center_y)
+        else:
+            self.use_optical_flow = True
+            return (int(self.gate_center[0] + self.optical_flow_c * np.mean(mag * np.cos(ang))), \
+                (int(self.gate_center[1] + self.optical_flow_c * np.mean(mag * np.sin(ang)))))
+
 
 # this part is temporary and will be covered by other files in the future
 if __name__ == '__main__':
@@ -142,17 +174,9 @@ if __name__ == '__main__':
             break
         if ret:
             frame = cv.resize(frame, None, fx=0.3, fy=0.3)
-			### FUNCTION CALL, can change this
             center, filtered_frame = gate_task.analyze(frame, True)
-			# cProfile.run("gate_task.analyze(frame, True)")
-			# cv.putText(frame, "x: %.2f" % x + " y: %.2f" % y,
-			# 	(20, frame.shape[0] - 20), cv.FONT_HERSHEY_SIMPLEX,
-			# 	2.0, (0, 165, 255), 3)
             cv.imshow('original', frame)
             cv.imshow('filtered_frame', filtered_frame)
-			# if not once:
-			# 	print(filtered_frame)
-			# 	once = True
             ret_tries = 0
             key = cv.waitKey(30)
             if key == ord('q') or key == 27:
@@ -166,4 +190,3 @@ if __name__ == '__main__':
         else:
             ret_tries += 1
         frame_count += 1
-		#print(frame_count / (time.time() - start_time))
