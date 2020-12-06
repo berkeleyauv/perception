@@ -1,5 +1,6 @@
 from typing import Any, Dict, Tuple
 import numpy as np
+
 class TaskPerceiver:
 
     def __init__(self, **kwargs):
@@ -21,7 +22,6 @@ class TaskPerceiver:
             slider_vals: A list of names of the variables which the user should be
                 able to control from the Visualizer, mapped to current slider
                 value for that variable
-
 		Returns:
 			the result of the algorithm
         """
