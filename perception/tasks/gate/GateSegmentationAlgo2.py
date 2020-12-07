@@ -1,11 +1,11 @@
-from GatePerceiver import GatePerceiver
+from TaskPerceiver import TaskPerceiver
 from typing import Tuple
 import sys
 import os
 sys.path.append(os.path.dirname(__file__))
 
 
-from segmentation.combinedFilter import init_combined_filter
+from ..segmentation.combinedFilter import init_combined_filter
 import numpy as np
 import math
 import cv2 as cv
@@ -13,7 +13,7 @@ import time
 import cProfile
 import statistics
 
-class GateSegmentationAlgo(GatePerceiver):
+class GateSegmentationAlgo(TaskPerceiver):
     center_x_locs, center_y_locs = [], []
     
     def __init__(self):

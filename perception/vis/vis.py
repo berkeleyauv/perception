@@ -4,6 +4,7 @@ import cv2 as cv
 from window_builder import Visualizer
 import cProfile as cp
 import pstats
+import perception
 
 # Parse arguments
 parser = argparse.ArgumentParser(description='Visualizes perception algorithms.')
@@ -15,7 +16,7 @@ parser.add_argument('--save_video', action='store_true')
 args = parser.parse_args()
 
 # Get algorithm module
-exec("from TestTasks.{} import {} as Algorithm".format(args.algorithm, args.algorithm))
+exec("from perception.tasks.gate.{} import {} as Algorithm".format(args.algorithm, args.algorithm))
 
 # Initialize image source
 data_sources = [args.data]

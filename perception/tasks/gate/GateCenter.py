@@ -1,6 +1,7 @@
-from GateSegmentationAlgo2 import GateSegmentationAlgo
-from GatePerceiver import GatePerceiver
+from .GateSegmentationAlgo2 import GateSegmentationAlgo
+from TaskPerceiver import TaskPerceiver
 from typing import Tuple
+from collections import namedtuple
 import sys
 import os
 sys.path.append(os.path.dirname(__file__))
@@ -12,28 +13,35 @@ import time
 import cProfile
 import statistics
 
-class GateCenter(GatePerceiver):
+class GateCenter(TaskPerceiver):
     center_x_locs, center_y_locs = [], []
+    output_class = namedtuple("GateOutput", ["centerx", "centery"])
+    output_type = {'centerx': np.int16, 'centery': np.int16}
 
     def __init__(self):
-        super()
+        super().__init__(optical_flow_c=((0, 100), 10))
         self.gate_center = self.output_class(250, 250)
         self.use_optical_flow = False
         self.optical_flow_c = 0.1
         self.gate = GateSegmentationAlgo()
+        self.prvs = None 
     
-    def analyze(self, frame, debug):
-        global prvs
+    def analyze(self, frame, debug, slider_vals):
+        self.optical_flow_c = slider_vals['optical_flow_c']/100
         rect1, rect2, debug_filter = self.gate.analyze(frame, True)
-        if rect1 and rect2:
-            self.gate_center = self.get_center(rect1, rect2, frame)
-            if self.use_optical_flow:
-                cv.circle(debug_filter, self.gate_center, 5, (3,186,252), -1)
-            else:
-                cv.circle(debug_filter, self.gate_center, 5, (0,0,255), -1)
+        if self.prvs is None:
+            # frame = cv.resize(frame, None, fx=0.3, fy=0.3)
+            self.prvs = cv.cvtColor(frame,cv.COLOR_BGR2GRAY)
+        else: 
+            if rect1 and rect2:
+                self.gate_center = self.get_center(rect1, rect2, frame)
+                if self.use_optical_flow:
+                    cv.circle(debug_filter, self.gate_center, 5, (3,186,252), -1)
+                else:
+                    cv.circle(debug_filter, self.gate_center, 5, (0,0,255), -1)
         
         if debug:
-            return (self.output_class(self.gate_center[0], self.gate_center[1]), debug_filter)
+            return (self.output_class(self.gate_center[0], self.gate_center[1]), [frame, debug_filter])
         return self.output_class(self.gate_center[0], self.gate_center[1])
 
     def center_without_optical_flow(self, center_x, center_y):
@@ -61,9 +69,9 @@ class GateCenter(GatePerceiver):
                 
         return (center_x, center_y)
     
-    def dense_optical_flow(self, frame, prvs):
+    def dense_optical_flow(self, frame):
         next = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-        flow = cv.calcOpticalFlowFarneback(prvs,next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+        flow = cv.calcOpticalFlowFarneback(self.prvs,next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
         mag, ang = cv.cartToPolar(flow[...,0], flow[...,1])
         mag = cv.normalize(mag,None,0,255,cv.NORM_MINMAX)
         # hsv[...,0] = ang*180/np.pi
@@ -73,11 +81,10 @@ class GateCenter(GatePerceiver):
         return next, mag, ang
     
     def get_center(self, rect1, rect2, frame):
-        global prvs
         x1, y1, w1, h1 = rect1
         x2, y2, w2, h2 = rect2
         center_x, center_y = (x1+x2)//2, ((y1+h1//2)+(y2+h2//2))//2
-        prvs, mag, ang = self.dense_optical_flow(frame, prvs)
+        self.prvs, mag, ang = self.dense_optical_flow(frame)
         # print(np.mean(mag))
         if len(self.center_x_locs) < 25 or (np.mean(mag) < 40 and ((not self.use_optical_flow ) or \
             (self.use_optical_flow and (center_x - self.gate_center[0])**2 + (center_y - self.gate_center[1])**2 < 50))):
