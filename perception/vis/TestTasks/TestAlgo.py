@@ -1,4 +1,4 @@
-from TaskPerceiver import TaskPerceiver
+from perception.tasks.TaskPerceiver import TaskPerceiver
 from typing import Dict
 import numpy as np
 import cv2 as cv
@@ -19,12 +19,7 @@ class TestAlgo(TaskPerceiver):
 		line1, = plt.plot(x1, y1, 'ko-')
 		line1.set_ydata(np.cos(2 * np.pi * (x1 + slider_vals['canny_low'] * 3.14 / 2)) * np.exp(-x1))
 		fig.canvas.draw()
-		img = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8,
-							sep='')
-		img = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
-		img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
-		img = cv.resize(img, (frame.shape[1], frame.shape[0]))
 
 		return frame, [frame, cv.cvtColor(frame, cv.COLOR_BGR2GRAY), cv.flip(cv.cvtColor(frame, cv.COLOR_BGR2GRAY), cv.ROTATE_180),
 					   cv.Canny(frame, slider_vals['canny_low'], slider_vals['canny_high']),
-					   cv.flip(cv.Canny(frame, slider_vals['canny_low'], slider_vals['canny_high']), 0), img]
+					   cv.flip(cv.Canny(frame, slider_vals['canny_low'], slider_vals['canny_high']), 0), fig]

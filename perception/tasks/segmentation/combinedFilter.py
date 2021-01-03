@@ -1,12 +1,9 @@
 import cv2
 import numpy as np
 
-import sys
-import os
 from sys import argv as args
-sys.path.append(os.path.dirname(__file__))
-from aggregateRescaling import init_aggregate_rescaling
-from peak_removal_adaptive_thresholding import filter_out_highest_peak_multidim
+from perception.tasks.segmentation.aggregateRescaling import init_aggregate_rescaling
+from perception.tasks.segmentation.peak_removal_adaptive_thresholding import filter_out_highest_peak_multidim
 
 if __name__ == "__main__":
     if args[1] == '0':
