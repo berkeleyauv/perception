@@ -24,10 +24,23 @@ class Visualizer:
 			newLst.append((frame))
 		return newLst
 
+	# set the first frame as the standard dimension, resize every frame after
+	def reshape(self, frames: List[np.ndarray]) -> List[np.ndarray]:
+		newLst = []
+		img = frames[0]
+		height = img.shape[0]
+		width = img.shape[1]
+		dim = (width, height)
+		for frame in frames:
+			if frame.shape[0] != height or frame.shape[1] != width:
+				frame = cv.resize(frame, dim, interpolation=cv.INTER_AREA)
+			newLst.append(frame)
+		return newLst
+
 	def display(self, frames: List[np.ndarray]) -> np.ndarray:
 		num_frames = len(frames)
 		assert (num_frames > 0 and num_frames <= 9), 'Invalid number of frames!'
-		frames = self.three_stack(frames)
+		frames = self.reshape(self.three_stack(frames))
 
 		columns = math.ceil(num_frames/math.sqrt(num_frames))
 		rows = math.ceil(num_frames/columns)

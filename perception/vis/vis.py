@@ -52,7 +52,6 @@ def main():
                                     sep='')
                 img = img.reshape(dframe.canvas.get_width_height()[::-1] + (3,))
                 img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
-                img = cv.resize(img, (frame.shape[1], frame.shape[0]))
                 debug_frames[i] = img
 
         to_show = window_builder.display(debug_frames)
