@@ -7,12 +7,12 @@ def nothing(x):
 	pass
 
 class Visualizer:
-	def __init__(self, vars: Dict[str, Tuple[Tuple[int, int], int]]):
-		self.variables = vars.keys()
+	def __init__(self, kwargs: Dict[str, Tuple[Tuple[int, int], int]]):
+		self.variables = kwargs.keys()
 		cv.namedWindow('Debug Frames')
-		for name, info in vars.items():
-			range, default_val = info
-			low_range, high_range = range
+		for name, info in kwargs.items():
+			slider_range, default_val = info
+			low_range, high_range = slider_range
 			cv.createTrackbar(name, 'Debug Frames', low_range, high_range, nothing)
 			cv.setTrackbarPos(name, 'Debug Frames', default_val)
 
@@ -55,7 +55,7 @@ class Visualizer:
 					this_row = np.hstack((this_row, to_add))
 				else:
 					this_row = np.hstack((this_row, np.zeros(frames[0].shape, dtype=np.uint8)))
-			if type(to_show) != int:
+			if not isinstance(to_show, int):
 				to_show = np.vstack((to_show, this_row))
 			else:
 				to_show = this_row
