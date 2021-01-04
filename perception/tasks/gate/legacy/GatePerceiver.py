@@ -1,7 +1,7 @@
 from collections import namedtuple
 import numpy as np
 import sys
-sys.path.insert(0, '..')
+sys.path.insert(0, '../..')
 from TaskPerceiver import TaskPerceiver
 
 class GatePerceiver(TaskPerceiver):

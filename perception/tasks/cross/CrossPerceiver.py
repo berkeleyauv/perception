@@ -1,8 +1,7 @@
 from collections import namedtuple
 import numpy as np
 import sys
-sys.path.insert(0, '..')
-from TaskPerceiver import TaskPerceiver
+from perception.tasks.TaskPerceiver import TaskPerceiver
 
 class CrossPerceiver(TaskPerceiver):
     named_tuple = namedtuple("CrossOutput", ["centerx", "centery"])
