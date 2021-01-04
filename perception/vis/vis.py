@@ -1,6 +1,7 @@
 import argparse
 import os
 
+from perception import ALGOS
 from perception.vis.FrameWrapper import FrameWrapper
 import cv2 as cv
 from perception.vis.window_builder import Visualizer
@@ -15,14 +16,13 @@ parser = argparse.ArgumentParser(description='Visualizes perception algorithms.'
 parser.add_argument(
     '--data', default='webcam', type=str
 )
-parser.add_argument('--algo_folder', default='vis.TestTasks', type=str)
 parser.add_argument('--algorithm', type=str)
-parser.add_argument('--cProfiler', type=str)
+parser.add_argument('--cProfiler', default='disabled_cprof', type=str)
 parser.add_argument('--save_video', action='store_true')
 args = parser.parse_args()
 
 # Get algorithm module
-exec("from perception.{0}.{1} import {1} as Algorithm".format(args.algo_folder, args.algorithm))
+Algorithm = ALGOS[args.algorithm]
 
 # Initialize image source
 # detects args.data, get a list of all file directory when given a directory
@@ -65,15 +65,17 @@ def main():
         if key_pressed == 113:
             break  # quit
 
-
-cp.run('main()', 'algo_stats')
-cv.destroyAllWindows()
-p = pstats.Stats('algo_stats')
-
-if args.cProfiler:
-    p.print_stats(args.cProfiler)
+if args.cProfiler == 'disabled_cprof':
+    main()
 else:
-    p.print_stats()
+    cp.run('main()', 'algo_stats')
+    p = pstats.Stats('algo_stats')
+    if args.cProfiler != 'all_methods':
+        p.print_stats(args.cProfiler)
+    else:
+        p.print_stats()
+
+cv.destroyAllWindows()
 
 if args.save_video:
     height, width, _ = video_frames[0].shape

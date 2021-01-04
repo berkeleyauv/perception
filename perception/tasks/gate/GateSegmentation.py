@@ -12,10 +12,10 @@ class GateSegmentationAlgo(TaskPerceiver):
     center_x_locs, center_y_locs = [], []
 
     def __init__(self):
-        super()
+        super().__init__()
         self.combined_filter = init_combined_filter()
 
-    def analyze(self, frame: np.ndarray, debug: bool) -> Tuple[float, float]:
+    def analyze(self, frame: np.ndarray, debug: bool, slider_vals=None) -> Tuple[float, float]:
         """Takes in the background removed image and returns the center between
         the two gate posts.
         Args:
