@@ -1,5 +1,5 @@
-from .GateSegmentationAlgo2 import GateSegmentationAlgo
-from TaskPerceiver import TaskPerceiver
+from perception.tasks.gate.GateSegmentationAlgoA import GateSegmentationAlgoA
+from perception.tasks.TaskPerceiver import TaskPerceiver
 from typing import Tuple
 from collections import namedtuple
 import sys
@@ -13,7 +13,7 @@ import time
 import cProfile
 import statistics
 
-class GateCenter(TaskPerceiver):
+class GateCenterAlgo(TaskPerceiver):
     center_x_locs, center_y_locs = [], []
     output_class = namedtuple("GateOutput", ["centerx", "centery"])
     output_type = {'centerx': np.int16, 'centery': np.int16}
@@ -23,29 +23,32 @@ class GateCenter(TaskPerceiver):
         self.gate_center = self.output_class(250, 250)
         self.use_optical_flow = False
         self.optical_flow_c = 0.1
-        self.gate = GateSegmentationAlgo()
+        self.gate = GateSegmentationAlgoA()
         self.prvs = None 
     
     def analyze(self, frame, debug, slider_vals):
         self.optical_flow_c = slider_vals['optical_flow_c']/100
-        rect1, rect2, debug_filter = self.gate.analyze(frame, True)
+        rect, debug_filters = self.gate.analyze(frame, True)
+        debug_filter = debug_filters[-1]
+        debug_filters = debug_filters[:-1]
+
         if self.prvs is None:
             # frame = cv.resize(frame, None, fx=0.3, fy=0.3)
-            self.prvs = cv.cvtColor(frame,cv.COLOR_BGR2GRAY)
+            self.prvs = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
         else: 
-            if rect1 and rect2:
-                self.gate_center = self.get_center(rect1, rect2, frame)
+            if rect[0] and rect[1]:
+                self.gate_center = self.get_center(rect[0], rect[1], frame)
                 if self.use_optical_flow:
                     cv.circle(debug_filter, self.gate_center, 5, (3,186,252), -1)
                 else:
                     cv.circle(debug_filter, self.gate_center, 5, (0,0,255), -1)
         
         if debug:
-            return (self.output_class(self.gate_center[0], self.gate_center[1]), [frame, debug_filter])
-        return self.output_class(self.gate_center[0], self.gate_center[1])
+            return (self.gate_center[0], self.gate_center[1]), list(debug_filters) + [debug_filter]
+        return (self.gate_center[0], self.gate_center[1])
 
     def center_without_optical_flow(self, center_x, center_y):
-		# get starting center location, averaging over the first 2510 frames
+        # get starting center location, averaging over the first 2510 frames
         if len(self.center_x_locs) == 0:
             self.center_x_locs.append(center_x)
             self.center_y_locs.append(center_y)
@@ -95,40 +98,7 @@ class GateCenter(TaskPerceiver):
             return (int(self.gate_center[0] + self.optical_flow_c * np.mean(mag * np.cos(ang))), \
                 (int(self.gate_center[1] + self.optical_flow_c * np.mean(mag * np.sin(ang)))))
 
-# this part is temporary and will be covered by other files in the future
+
 if __name__ == '__main__':
-    cap = cv.VideoCapture(sys.argv[1])
-    ret_tries = 0
-    start_time = time.time()
-    frame_count = 0
-    paused = False
-    speed = 1
-    ret, frame1 = cap.read()
-    frame1 = cv.resize(frame1, None, fx=0.3, fy=0.3)
-    prvs = cv.cvtColor(frame1,cv.COLOR_BGR2GRAY)
-    hsv = np.zeros_like(frame1)
-    hsv[...,1] = 255
-    gate_center = GateCenter()
-    while ret_tries < 50:
-        for _ in range(speed):
-            ret, frame = cap.read()
-        if frame_count == 1000:
-            break
-        if ret:
-            frame = cv.resize(frame, None, fx=0.3, fy=0.3)
-            center, filtered_frame = gate_center.analyze(frame, True)
-            cv.imshow('original', frame)
-            cv.imshow('filtered_frame', filtered_frame)
-            ret_tries = 0
-            key = cv.waitKey(30)
-            if key == ord('q') or key == 27:
-                break
-            if key == ord('p'):
-                paused = not paused
-            if key == ord('i') and speed > 1:
-                speed -= 1
-            if key == ord('o'):
-                speed += 1
-        else:
-            ret_tries += 1
-        frame_count += 1
+    from perception.vis.vis import run
+    run(['..\..\..\data\GOPR1142.MP4'], GateCenterAlgo(), False)

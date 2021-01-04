@@ -24,7 +24,7 @@ class FrameWrapper():
     WEBCAM_TRIES = 10
 
     def __init__(self, filenames, resize=1):
-        self.filenames = filenames # Get this list of relative paths to files from vis
+        self.filenames = filenames  # Get this list of relative paths to files from vis
         # There aren't any checks for resize==1 to improve speed b/c this expects resize != 1
         self.resize = resize
 

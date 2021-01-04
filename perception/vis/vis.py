@@ -1,58 +1,68 @@
 import argparse
-from FrameWrapper import FrameWrapper
+from perception.vis.FrameWrapper import FrameWrapper
 import cv2 as cv
-from window_builder import Visualizer
-import cProfile as cp
-import pstats
+from perception.vis.Visualizer import Visualizer
+import cProfile
 
-# Parse arguments
-parser = argparse.ArgumentParser(description='Visualizes perception algorithms.')
-parser.add_argument(
-    '--data', default='webcam', type=str
-)
-parser.add_argument('--algorithm', type=str)
-parser.add_argument('--save_video', action='store_true')
-args = parser.parse_args()
 
-# Get algorithm module
-exec("from TestTasks.{} import {} as Algorithm".format(args.algorithm, args.algorithm))
+def run(data_sources, algorithm, save_video=False):
+    out = None
+    window_builder = Visualizer(algorithm.variables)
+    data = FrameWrapper(data_sources, 0.25)
+    frame_count = 0
+    paused = False
+    speed = 1
 
-# Initialize image source
-data_sources = [args.data]
-data = FrameWrapper(data_sources, 0.25)
-
-algorithm = Algorithm()
-window_builder = Visualizer(algorithm.var_info())
-video_frames = []
-# Main Loop
-def main():
     for frame in data:
+        if frame_count % speed == 0 and not paused:
+            if algorithm.variables:
+                state, debug_frames = algorithm.analyze(frame, debug=True, slider_vals=window_builder.update_vars())
+            else:
+                state, debug_frames = algorithm.analyze(frame, debug=True)
 
-        state, debug_frames = algorithm.analyze(
-            frame, debug=True, slider_vals=window_builder.update_vars()
-        )
-        to_show = window_builder.display(debug_frames)
-        cv.imshow('Debug Frames', to_show)
-        if args.save_video:
-            video_frames.append(to_show)
+            to_show = window_builder.display(debug_frames)
+            cv.imshow('Debug Frames', to_show)
+            if save_video:
+                if out is None:
+                    height, width, _ = to_show.shape
+                    # TODO: get codec to work
+                    out = cv.VideoWriter('rec.mp4', cv.VideoWriter_fourcc(*'mp4v'), 60, (height, width))
+                if out:
+                    out.write(to_show)
 
-        key_pressed = cv.waitKey(60) & 0xFF
-        if key_pressed == 112:
-            cv.waitKey(0) # pause
-        if key_pressed == 113:
-            break # quit
+        key = cv.waitKey(30)
+        if key == ord('q') or key == 27:
+            break
+        if key == ord('p'):
+            paused = not paused
+        if key == ord('i') and speed > 1:
+            speed -= 1
+            print(f'speed {speed}')
+        if key == ord('o'):
+            speed += 1
+            print(f'speed {speed}')
+        frame_count += 1
+
+    cv.destroyAllWindows()
+    if out:
+        out.release()
 
 
-cp.run('main()', 'algo_stats')
-cv.destroyAllWindows()
-p = pstats.Stats('algo_stats')
-p.print_stats('analyze')
+if __name__ == '__main__':
+    # Parse arguments
+    parser = argparse.ArgumentParser(description='Visualizes perception algorithms.')
+    parser.add_argument('--data', default='webcam', type=str)
+    parser.add_argument('--algorithm', type=str)
+    parser.add_argument('--save_video', action='store_true')
+    parser.add_argument('--profile', action='store_true')
+    args = parser.parse_args()
 
-if args.save_video:
-    height, width, _ = video_frames[0].shape
-    out = cv.VideoWriter('deb_cap.avi', cv.VideoWriter_fourcc(*'XVID'), 60, (height, width))
-    for img in video_frames:
-        height2, width2, _ = img.shape
-        if (height2, width2) == (height, width):
-            out.write(img)
-    out.release()
+    # Import Algorithm
+    exec(f"from {args.algorithm} import {args.algorithm.split('.')[-1]} as Algorithm")
+    algorithm = Algorithm()
+    data_sources = [args.data]
+
+    if args.profile:
+        stats = cProfile.run('run(data_sources, algorithm, args.save_video)')
+    else:
+        run(data_sources, algorithm, args.save_video)
