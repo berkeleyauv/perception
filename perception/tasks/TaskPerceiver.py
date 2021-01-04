@@ -12,7 +12,7 @@ class TaskPerceiver:
                 the initial value of the slider.
         """
         self.time = 0
-        self.variables = kwargs
+        self.kwargs = kwargs
 
     def analyze(self, frame: np.ndarray, debug: bool, slider_vals: Dict[str, int]) -> Any:
         """Runs the algorithm and returns the result.
@@ -29,4 +29,4 @@ class TaskPerceiver:
         raise NotImplementedError("Need to implement with child class.")
 
     def var_info(self) -> Dict[str, Tuple[Tuple[int, int], int]]:
-        return self.variables
+        return self.kwargs
