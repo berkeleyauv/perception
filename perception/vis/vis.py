@@ -47,7 +47,7 @@ def main():
         )
 
         for i, dframe in enumerate(debug_frames):
-            if type(dframe) == Figure:
+            if isinstance(dframe, Figure):
                 img = np.fromstring(dframe.canvas.tostring_rgb(), dtype=np.uint8,
                                     sep='')
                 img = img.reshape(dframe.canvas.get_width_height()[::-1] + (3,))
