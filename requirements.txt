@@ -1,6 +1,5 @@
-opencv-python==3.4.3.18
-torch==1.2.0
-torchvision==0.6.0
+opencv-python
 scipy
 numpy
 matplotlib
+imageio
