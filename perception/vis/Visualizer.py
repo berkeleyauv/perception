@@ -2,6 +2,7 @@ import numpy as np
 import cv2 as cv
 import math
 from typing import Dict, Tuple, List
+from matplotlib.pyplot import Figure
 
 def nothing(x):
 	pass
@@ -40,6 +41,15 @@ class Visualizer:
 	def display(self, frames: List[np.ndarray]) -> np.ndarray:
 		num_frames = len(frames)
 		assert (num_frames > 0 and num_frames <= 9), 'Invalid number of frames!'
+
+		for i, frame in enumerate(frames):
+			if isinstance(frame, Figure):
+				img = np.fromstring(frame.canvas.tostring_rgb(), dtype=np.uint8,
+									sep='')
+				img = img.reshape(frame.canvas.get_width_height()[::-1] + (3,))
+				img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
+				frames[i] = img
+
 		frames = self.reshape(self.three_stack(frames))
 
 		columns = math.ceil(num_frames/math.sqrt(num_frames))

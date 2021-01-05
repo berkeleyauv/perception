@@ -1,8 +1,15 @@
 import argparse
+import os
+
+from perception import ALGOS
 from perception.vis.FrameWrapper import FrameWrapper
 import cv2 as cv
 from perception.vis.Visualizer import Visualizer
 import cProfile
+import pstats
+import imageio
+from matplotlib.pyplot import Figure
+import numpy as np
 
 
 def run(data_sources, algorithm, save_video=False):
@@ -24,11 +31,13 @@ def run(data_sources, algorithm, save_video=False):
             cv.imshow('Debug Frames', to_show)
             if save_video:
                 if out is None:
-                    height, width, _ = to_show.shape
+                    # height, width, _ = to_show.shape
                     # TODO: get codec to work
-                    out = cv.VideoWriter('rec.mp4', cv.VideoWriter_fourcc(*'mp4v'), 60, (height, width))
+                    # out = cv.VideoWriter('rec.mp4', cv.VideoWriter_fourcc(*'mp4v'), 60, (height, width))
+                    out = imageio.get_writer('vis_rec.mp4')
                 if out:
-                    out.write(to_show)
+                    out_img = cv.cvtColor(to_show, cv.COLOR_BGR2RGB)
+                    out.append_data(out_img)
 
         key = cv.waitKey(30)
         if key == ord('q') or key == 27:
@@ -45,24 +54,39 @@ def run(data_sources, algorithm, save_video=False):
 
     cv.destroyAllWindows()
     if out:
-        out.release()
+        out.close()
+
+
+def profile(*args, stats='all'):
+    with cProfile.Profile() as pr:
+        run(*args)
+    if stats == 'all':
+        pr.print_stats()
+    else:
+        pr.print_stats(stats)
 
 
 if __name__ == '__main__':
     # Parse arguments
     parser = argparse.ArgumentParser(description='Visualizes perception algorithms.')
     parser.add_argument('--data', default='webcam', type=str)
-    parser.add_argument('--algorithm', type=str)
+    parser.add_argument('--algorithm', type=str, required=True)
+    parser.add_argument('--profile', default=None, type=str)
     parser.add_argument('--save_video', action='store_true')
-    parser.add_argument('--profile', action='store_true')
     args = parser.parse_args()
 
-    # Import Algorithm
-    exec(f"from {args.algorithm} import {args.algorithm.split('.')[-1]} as Algorithm")
-    algorithm = Algorithm()
-    data_sources = [args.data]
+    # Get algorithm class and init
+    algorithm = ALGOS[args.algorithm]()
 
-    if args.profile:
-        stats = cProfile.run('run(data_sources, algorithm, args.save_video)')
+    # Initialize image source
+    # detects args.data, get a list of all file directory when given a directory
+    # change data_source to a list of all files in the directory
+    if os.path.isdir(args.data):
+        data_sources = os.listdir(args.data)
     else:
+        data_sources = [args.data]
+
+    if args.cProfiler is not None:
         run(data_sources, algorithm, args.save_video)
+    else:
+        profile(data_sources, algorithm, args.save_video, stats=args.profile)

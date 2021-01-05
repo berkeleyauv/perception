@@ -11,7 +11,6 @@ class TaskPerceiver:
                 for the slider which controls this variable, and default_val is
                 the initial value of the slider.
         """
-        self.time = 0
         self.kwargs = kwargs
 
     def analyze(self, frame: np.ndarray, debug: bool, slider_vals: Dict[str, int]) -> Any:
