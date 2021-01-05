@@ -13,10 +13,8 @@ import numpy as np
 
 # Parse arguments
 parser = argparse.ArgumentParser(description='Visualizes perception algorithms.')
-parser.add_argument(
-    '--data', default='webcam', type=str
-)
-parser.add_argument('--algorithm', type=str)
+parser.add_argument('--data', default='webcam', type=str)
+parser.add_argument('--algorithm', type=str, required=True)
 parser.add_argument('--cProfiler', default='disabled_cprof', type=str)
 parser.add_argument('--save_video', action='store_true')
 args = parser.parse_args()
@@ -27,10 +25,10 @@ Algorithm = ALGOS[args.algorithm]
 # Initialize image source
 # detects args.data, get a list of all file directory when given a directory
 # change data_source to a list of all files in the directory
-if os.path.isfile(args.data):
-    data_sources = [args.data]
-elif os.path.isdir(args.data):
+if os.path.isdir(args.data):
     data_sources = os.listdir(args.data)
+else:
+    data_sources = [args.data]
 data = FrameWrapper(data_sources, 0.25)
 
 algorithm = Algorithm()
