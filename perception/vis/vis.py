@@ -7,7 +7,7 @@ import cProfile
 
 def run(data_sources, algorithm, save_video=False):
     out = None
-    window_builder = Visualizer(algorithm.variables)
+    window_builder = Visualizer(algorithm.kwargs)
     data = FrameWrapper(data_sources, 0.25)
     frame_count = 0
     paused = False
@@ -15,7 +15,7 @@ def run(data_sources, algorithm, save_video=False):
 
     for frame in data:
         if frame_count % speed == 0 and not paused:
-            if algorithm.variables:
+            if algorithm.kwargs:
                 state, debug_frames = algorithm.analyze(frame, debug=True, slider_vals=window_builder.update_vars())
             else:
                 state, debug_frames = algorithm.analyze(frame, debug=True)

@@ -1,16 +1,10 @@
 from perception.tasks.gate.GateSegmentationAlgoA import GateSegmentationAlgoA
 from perception.tasks.TaskPerceiver import TaskPerceiver
-from typing import Tuple
 from collections import namedtuple
-import sys
-import os
-sys.path.append(os.path.dirname(__file__))
 
 import numpy as np
 import math
 import cv2 as cv
-import time
-import cProfile
 import statistics
 
 class GateCenterAlgo(TaskPerceiver):
@@ -73,29 +67,28 @@ class GateCenterAlgo(TaskPerceiver):
         return (center_x, center_y)
     
     def dense_optical_flow(self, frame):
-        next = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-        flow = cv.calcOpticalFlowFarneback(self.prvs,next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
-        mag, ang = cv.cartToPolar(flow[...,0], flow[...,1])
-        mag = cv.normalize(mag,None,0,255,cv.NORM_MINMAX)
+        next_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+        flow = cv.calcOpticalFlowFarneback(self.prvs, next_frame, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+        mag, ang = cv.cartToPolar(flow[..., 0], flow[..., 1])
+        mag = cv.normalize(mag, None, 0, 255, cv.NORM_MINMAX)
         # hsv[...,0] = ang*180/np.pi
         # hsv[...,2] = mag
         # bgr = cv.cvtColor(hsv,cv.COLOR_HSV2BGR)
         # cv.imshow('bgr', bgr)
-        return next, mag, ang
-    
+        return next_frame, mag, ang
+
     def get_center(self, rect1, rect2, frame):
         x1, y1, w1, h1 = rect1
         x2, y2, w2, h2 = rect2
-        center_x, center_y = (x1+x2)//2, ((y1+h1//2)+(y2+h2//2))//2
+        center_x, center_y = (x1 + x2) // 2, ((y1 + h1 // 2) + (y2 + h2 // 2)) // 2
         self.prvs, mag, ang = self.dense_optical_flow(frame)
         # print(np.mean(mag))
         if len(self.center_x_locs) < 25 or (np.mean(mag) < 40 and ((not self.use_optical_flow ) or \
             (self.use_optical_flow and (center_x - self.gate_center[0])**2 + (center_y - self.gate_center[1])**2 < 50))):
             self.use_optical_flow = False
             return self.center_without_optical_flow(center_x, center_y)
-        else:
-            self.use_optical_flow = True
-            return (int(self.gate_center[0] + self.optical_flow_c * np.mean(mag * np.cos(ang))), \
+        self.use_optical_flow = True
+        return (int(self.gate_center[0] + self.optical_flow_c * np.mean(mag * np.cos(ang))), \
                 (int(self.gate_center[1] + self.optical_flow_c * np.mean(mag * np.sin(ang)))))
 
 
