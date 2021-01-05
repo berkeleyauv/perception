@@ -35,15 +35,37 @@ Misc code, camera calibration etc.
 Code for specific tasks like 
 
 1. cross: cross detection
-1. segmentation:
-1. path_marker: path_marker detection
-1. spinny_wheel_detection
+2. segmentation:
+3. path_marker: path_marker detection
+4. spinny_wheel_detection
 
 etc
 
 ## vis:
 Visualization tools 
 Code for testing tasks (Ideally this should be placed a separate folder called `tests`).
+
+After writing the code for your specific task algorithm, you can do one of two things:
+
+1. Add this to the end of <your algorithm>.py file:
+    
+        if __name__ == '__main__':
+            from perception.vis.vis import run
+            run(<list of file/directory names>, <new instance of your class>, <save your video?>)
+    and then run
+    
+        python <your algorithm>.py
+2. Add this to the perception/__init__.py file:
+
+        import <path to your module>
+        
+        ALGOS = {
+            'custom_name': <your module>.<your class reference>
+        }
+    and then run
+    
+        python vis.py --algorithm custom_name [--data <path to file/directory>] [--profile <function name>] [--save_video]
+    The **algorithm** parameter is required. If **data** isn't specified, it'll default to your webcam. If **profile** isn't specified, it will be off by default. Add the **save_video** tag if you want to save your vis test as an mp4 file.
 
 ## wiki:
 Flowchart on TaskPerceiver, TaskReceiver, AlgorithmRunner.
