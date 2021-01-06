@@ -1,17 +1,9 @@
 from perception.tasks.TaskPerceiver import TaskPerceiver
 from typing import Tuple
-import sys
-import os
-sys.path.append(os.path.dirname(__file__))
-
 
 from perception.tasks.segmentation.combinedFilter import init_combined_filter
 import numpy as np
-import math
 import cv2 as cv
-import time
-import cProfile
-import statistics
 
 
 class GateSegmentationAlgoA(TaskPerceiver):
@@ -21,15 +13,16 @@ class GateSegmentationAlgoA(TaskPerceiver):
         super().__init__()
         self.combined_filter = init_combined_filter()
 
+    # TODO: fix return typing
     def analyze(self, frame: np.ndarray, debug: bool, slider_vals=None) -> Tuple[float, float]:
         """Takes in the background removed image and returns the center between
         the two gate posts.
         Args:
             frame: The background removed frame to analyze
             debug: Whether or not tot display intermediate images for debugging
-		Reurns:
-			(x,y) coordinate with center of gate
-		"""
+        Reurns:
+            (x,y) coordinate with center of gate
+        """
         rect1, rect2 = None, None
 
         filtered_frame = self.combined_filter(frame, display_figs=False)

@@ -1,8 +1,8 @@
-from typing import Any, Dict, Tuple
+from typing import Any, Dict
 import numpy as np
 
-class TaskPerceiver:
 
+class TaskPerceiver:
     def __init__(self, **kwargs):
         """Initializes the TaskPerceiver.
         Args:
@@ -16,13 +16,13 @@ class TaskPerceiver:
     def analyze(self, frame: np.ndarray, debug: bool, slider_vals: Dict[str, int]) -> Any:
         """Runs the algorithm and returns the result.
         Args:
-			frame: The frame to analyze
+            frame: The frame to analyze
             debug: Whether or not to display intermediate images for debugging
             slider_vals: A list of names of the variables which the user should be
                 able to control from the Visualizer, mapped to current slider
                 value for that variable
-		Returns:
-			the result of the algorithm
-			debug frames must each be same size as original input frame. Might change this in the future.
+        Returns:
+            the result of the algorithm
+            debug frames must each be same size as original input frame. Might change this in the future.
         """
         raise NotImplementedError("Need to implement with child class.")

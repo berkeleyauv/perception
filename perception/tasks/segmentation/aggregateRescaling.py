@@ -3,6 +3,8 @@ from sys import argv as args
 import numpy as np
 import numpy.linalg as LA
 
+
+# TODO: port to vis + TaskPerciever format or remove
 # Jenny -> unsigned ints fixed the problem
 # Damas -> flip weight vector every frame
 
@@ -42,9 +44,9 @@ def init_aggregate_rescaling(show_frame=True):
         red -= max_min['min']
         red *= 255.0 / (max_min['max'] - max_min['min'])
         """
-		if False:#not paused:
-			print(np.min(red), np.max(red), max_min['min'], max_min['max'])
-		"""
+        if False:#not paused:
+            print(np.min(red), np.max(red), max_min['min'], max_min['max'])
+        """
         red = red.astype(np.uint8)
         red = np.expand_dims(red, axis=2)
         red = np.concatenate((red, red, red), axis=2)

@@ -1,16 +1,11 @@
 from perception.tasks.TaskPerceiver import TaskPerceiver
 from typing import Tuple
-import sys
-import os
-from pathlib import Path
 from collections import namedtuple
-sys.path.append(str(Path(__file__).parents[2]) + '/tasks')
 
 from perception.tasks.segmentation.combinedFilter import init_combined_filter
 import numpy as np
 import cv2 as cv
-import time
-import cProfile
+
 
 class GateSegmentationAlgoC(TaskPerceiver):
     __past_centers = []
@@ -23,6 +18,7 @@ class GateSegmentationAlgoC(TaskPerceiver):
         self.__alpha = alpha
         self.combined_filter = init_combined_filter()
 
+    # TODO: fix return typing
     def analyze(self, frame: np.ndarray, debug: bool) -> Tuple[float, float]:
         """Takes in the background removed image and returns the center between
         the two gate posts.
@@ -58,6 +54,7 @@ class GateSegmentationAlgoC(TaskPerceiver):
                         self.__alpha * gate_center + (1 - self.__alpha) * self.__ema
                     )
                 gate_center = (int(self.__ema[0]), int(self.__ema[1]))
+                # TODO: clean this up via hyperparam or move to gate center algo
                 # if len(self.__past_centers) < 15:
                 # 	self.__past_centers += [gate_center]
                 # else:

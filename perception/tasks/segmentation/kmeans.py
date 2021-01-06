@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from scipy.signal import find_peaks, peak_widths
 from sys import argv as args
 
+# TODO: port to vis + TaskPerciever format or remove
+
 ########################################################################
 # An attempt at an adaptive thresholding algorithm based on the frequency
 # of pixel values ("peaks" if looking at a histogram of # pixels vs pixel value of a frame)
@@ -17,6 +19,7 @@ from sys import argv as args
 #    places a mask over areas that have lots of edges, which in many cases
 #    is equivalent to places with lots of noise
 ########################################################################
+
 
 def k_means_segmentation(votes, frame_shape, num_groups=2, percentile=10):
     """ Attempts to use kmeans to segment the frame into num_group features
@@ -74,7 +77,6 @@ if __name__ == "__main__":
     out = cv2.VideoWriter('out.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 30.0,
                           (int(frame.shape[1] * 0.4), int(frame.shape[0] * 0.4)))
 
-
     ret_tries = 0
 
     while (1 and ret_tries < 50):
@@ -82,8 +84,6 @@ if __name__ == "__main__":
 
         if ret:
             frame = cv2.resize(frame, None, fx=0.4, fy=0.4)
-
-
 
             cv2.imshow('original', frame)
             plt.pause(0.001)

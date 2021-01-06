@@ -1,5 +1,7 @@
-from combined_filter import init_combined_filter
+from perception.tasks.segmentation.combinedFilter import init_combined_filter
 from typing import Union
+
+# TODO: port to vis + TaskPerciever format or remove
 
 if __name__ == "__main__":
     import numpy as np

@@ -7,6 +7,7 @@ import math
 import cv2 as cv
 import statistics
 
+
 class GateCenterAlgo(TaskPerceiver):
     center_x_locs, center_y_locs = [], []
     output_class = namedtuple("GateOutput", ["centerx", "centery"])
@@ -18,8 +19,9 @@ class GateCenterAlgo(TaskPerceiver):
         self.use_optical_flow = False
         self.optical_flow_c = 0.1
         self.gate = GateSegmentationAlgoA()
-        self.prvs = None 
-    
+        self.prvs = None
+
+    # TODO: do input and return typing
     def analyze(self, frame, debug, slider_vals):
         self.optical_flow_c = slider_vals['optical_flow_c']/100
         rect, debug_filters = self.gate.analyze(frame, True)
@@ -82,7 +84,7 @@ class GateCenterAlgo(TaskPerceiver):
         x2, y2, w2, h2 = rect2
         center_x, center_y = (x1 + x2) // 2, ((y1 + h1 // 2) + (y2 + h2 // 2)) // 2
         self.prvs, mag, ang = self.dense_optical_flow(frame)
-        # print(np.mean(mag))
+
         if len(self.center_x_locs) < 25 or (np.mean(mag) < 40 and ((not self.use_optical_flow ) or \
             (self.use_optical_flow and (center_x - self.gate_center[0])**2 + (center_y - self.gate_center[1])**2 < 50))):
             self.use_optical_flow = False

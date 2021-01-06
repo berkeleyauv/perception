@@ -6,10 +6,7 @@ from perception.vis.FrameWrapper import FrameWrapper
 import cv2 as cv
 from perception.vis.Visualizer import Visualizer
 import cProfile
-import pstats
 import imageio
-from matplotlib.pyplot import Figure
-import numpy as np
 
 
 def run(data_sources, algorithm, save_video=False):
@@ -20,8 +17,11 @@ def run(data_sources, algorithm, save_video=False):
     paused = False
     speed = 1
 
-    for frame in data:
+    while data.has_next():
         if frame_count % speed == 0 and not paused:
+            frame = next(data)
+            frame_count += 1
+
             if algorithm.kwargs:
                 state, debug_frames = algorithm.analyze(frame, debug=True, slider_vals=window_builder.update_vars())
             else:
@@ -50,7 +50,7 @@ def run(data_sources, algorithm, save_video=False):
         if key == ord('o'):
             speed += 1
             print(f'speed {speed}')
-        frame_count += 1
+
 
     cv.destroyAllWindows()
     if out:

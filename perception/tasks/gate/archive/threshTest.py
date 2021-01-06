@@ -2,6 +2,9 @@ from __future__ import print_function
 import cv2 as cv
 import argparse
 import numpy as np
+
+# TODO: port to vis + TaskPerciever format or remove
+
 #expectations
 #contours closest to the last ones
 #should know when we passed through the gate

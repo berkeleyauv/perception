@@ -3,6 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks, peak_widths
 from sys import argv as args
+
+# TODO: port to vis + TaskPerciever format or remove
+
 ########################################################################
 # An attempt at an adaptive thresholding algorithm based on the frequency
 # of pixel values ("peaks" if looking at a histogram of # pixels vs pixel value of a frame)
@@ -51,6 +54,7 @@ if __name__ == "__main__":
 
     # thresholds_used = [h_low, s_low, v_low, h_hi, s_hi, v_hi]
 
+
 def init_test_hsv_thresholds(thresholds):
     # Keep track of previous threhold values to see if the user is using the trackbar
     # is there a function that detects whether the mouse button is down?
@@ -61,25 +65,25 @@ def init_test_hsv_thresholds(thresholds):
         pass
 
     cv2.namedWindow('ideal thresholding')
-    cv2.createTrackbar('h_low','ideal thresholding',h_low,255,nothing)
-    cv2.createTrackbar('s_low','ideal thresholding',s_low,255,nothing)
-    cv2.createTrackbar('v_low','ideal thresholding',v_low,255,nothing)
-    cv2.createTrackbar('h_high','ideal thresholding',h_hi,255,nothing)
-    cv2.createTrackbar('s_high','ideal thresholding',s_hi,255,nothing)
-    cv2.createTrackbar('v_high','ideal thresholding',v_hi,255,nothing)
+    cv2.createTrackbar('h_low', 'ideal thresholding', h_low, 255, nothing)
+    cv2.createTrackbar('s_low', 'ideal thresholding', s_low, 255, nothing)
+    cv2.createTrackbar('v_low', 'ideal thresholding', v_low, 255, nothing)
+    cv2.createTrackbar('h_high', 'ideal thresholding', h_hi, 255, nothing)
+    cv2.createTrackbar('s_high', 'ideal thresholding', s_hi, 255, nothing)
+    cv2.createTrackbar('v_high', 'ideal thresholding', v_hi, 255, nothing)
 
     def test_hsv_thresholds(frame, thresholds):
         nonlocal prev_h_low, prev_s_low, prev_v_low, prev_h_hi, prev_s_hi, prev_v_hi
 
-        h_low_track = cv2.getTrackbarPos('h_low','ideal thresholding')
-        s_low_track = cv2.getTrackbarPos('s_low','ideal thresholding')
-        v_low_track = cv2.getTrackbarPos('v_low','ideal thresholding')
-        h_hi_track = cv2.getTrackbarPos('h_high','ideal thresholding')
-        s_hi_track = cv2.getTrackbarPos('s_high','ideal thresholding')
-        v_hi_track = cv2.getTrackbarPos('v_high','ideal thresholding')
+        h_low_track = cv2.getTrackbarPos('h_low', 'ideal thresholding')
+        s_low_track = cv2.getTrackbarPos('s_low', 'ideal thresholding')
+        v_low_track = cv2.getTrackbarPos('v_low', 'ideal thresholding')
+        h_hi_track = cv2.getTrackbarPos('h_high', 'ideal thresholding')
+        s_hi_track = cv2.getTrackbarPos('s_high', 'ideal thresholding')
+        v_hi_track = cv2.getTrackbarPos('v_high', 'ideal thresholding')
 
-        if h_low_track!=prev_h_low or s_low_track!=prev_s_low or v_low_track!=prev_v_low \
-                or h_hi_track!=prev_h_hi or s_hi_track!=prev_s_hi or v_hi_track!=prev_v_hi:
+        if h_low_track != prev_h_low or s_low_track != prev_s_low or v_low_track != prev_v_low \
+                or h_hi_track != prev_h_hi or s_hi_track != prev_s_hi or v_hi_track != prev_v_hi:
             # If user is adjusting the trackbars, use the user input
             thresholds_used = [h_low_track, s_low_track, v_low_track, h_hi_track, s_hi_track, v_hi_track]
         else:
@@ -92,9 +96,9 @@ def init_test_hsv_thresholds(thresholds):
             cv2.setTrackbarPos('s_high', 'ideal thresholding', thresholds_used[4])
             cv2.setTrackbarPos('v_high', 'ideal thresholding', thresholds_used[5])
 
-        hsv = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(hsv, np.array(thresholds_used[:3]), np.array(thresholds_used[3:]))
-        res = cv2.bitwise_and(frame,frame, mask= mask)
+        res = cv2.bitwise_and(frame, frame, mask=mask)
 
         cv2.imshow('ideal thresholding', res)
 
@@ -103,20 +107,22 @@ def init_test_hsv_thresholds(thresholds):
 
     return test_hsv_thresholds
 
+
 def hsv_threshold(frame, thresh_used):
-    hsv = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv, np.array(thresh_used[:3]), np.array(thresh_used[3:]))
-    res = cv2.bitwise_and(frame,frame, mask= mask)
+    res = cv2.bitwise_and(frame, frame, mask=mask)
     return thresh_used, res
 
+
 def disp_hist(frame, title, labels, colors):
-    frame0 = frame[:,:,0].flatten()
+    frame0 = frame[:, :, 0].flatten()
     frame0 = frame0[frame0 > 0]
 
-    frame1 = frame[:,:,1].flatten()
+    frame1 = frame[:, :, 1].flatten()
     frame1 = frame1[frame1 > 0]
 
-    frame2 = frame[:,:,2].flatten()
+    frame2 = frame[:, :, 2].flatten()
     frame2 = frame2[frame2 > 0]
 
     plt.figure(hash(title))
@@ -131,6 +137,7 @@ def disp_hist(frame, title, labels, colors):
     plt.legend()
     plt.draw()
 
+
 def find_peak_ranges(frame, display_plots=False, title=None, labels=None, colors=None):
     """ Finds a returns the widest peak's x-range in all three channels of frame 
         Result is formatted to fit cv2.inRange() -> ((low1, low2, low3), (hi1, hi2, hi3))
@@ -138,8 +145,9 @@ def find_peak_ranges(frame, display_plots=False, title=None, labels=None, colors
 
     # TODO: Maybe use a different combination of peak characteristics to more accurately
     #       select the entire peak (only the tip is selected right now)
-    peak_width_height = 0.95 # How far down the peak that the algorithm draws 
-                            # the horizontal width line
+    peak_width_height = 0.95  # How far down the peak that the algorithm draws
+
+    # the horizontal width line
 
     def find_highest_peak(channel, display_plots=False):
         """ Finds and returns the x-range of the highest peak in the
@@ -148,33 +156,34 @@ def find_peak_ranges(frame, display_plots=False, title=None, labels=None, colors
         f = frame[:, :, channel].flatten()
 
         # Some semi-hardcoded values :)
-        num_bins = max(int((np.amax(f)-np.amin(f)) / 4), 10)
+        num_bins = max(int((np.amax(f) - np.amin(f)) / 4), 10)
         # num_bins = 30
 
         hist, bins = np.histogram(f, bins=num_bins)
 
-        hist[0] = 0 # get rid of stuff that was thresholded to 0
-        hist = np.hstack([hist, [0]]) # make stuff at 255 into a peak
-        bins = np.hstack([bins, [bins[bins.shape[0]-1] + 1]])
+        hist[0] = 0  # get rid of stuff that was thresholded to 0
+        hist = np.hstack([hist, [0]])  # make stuff at 255 into a peak
+        bins = np.hstack([bins, [bins[bins.shape[0] - 1] + 1]])
 
         peaks, properties = find_peaks(hist, height=0.1)
         if len(peaks) > 0:
             i = np.argmax(properties['peak_heights'])
             widths = peak_widths(hist, peaks, rel_height=peak_width_height)[0]
             # i = np.argmax(widths)
-            largest_peak = (int((bins[peaks[i]]+bins[peaks[i]+1])//2-widths[i]//2), 
-                                int((bins[peaks[i]]+bins[peaks[i]+1])//2+widths[i]//2)) # beginning and end of the peak
+            largest_peak = (int((bins[peaks[i]] + bins[peaks[i] + 1]) // 2 - widths[i] // 2),
+                            int((bins[peaks[i]] + bins[peaks[i] + 1]) // 2 + widths[
+                                i] // 2))  # beginning and end of the peak
 
             if display_plots:
                 ax = plt.gca()
                 print(max(f))
                 ax.set_xlim([0, max(255, max(f))])
-                #Plot values in this channel
-                plt.plot(bins[1:],hist, label=labels[channel], color=colors[channel])
+                # Plot values in this channel
+                plt.plot(bins[1:], hist, label=labels[channel], color=colors[channel])
                 # Plot peaks
-                plt.plot(bins[peaks+1], hist[peaks], "x")
+                plt.plot(bins[peaks + 1], hist[peaks], "x")
                 # Plot peak widths
-                plt.hlines(hist[peaks]*0.9, bins[peaks+1]-widths//2, bins[peaks+1]+widths//2)
+                plt.hlines(hist[peaks] * 0.9, bins[peaks + 1] - widths // 2, bins[peaks + 1] + widths // 2)
         else:
             largest_peak = (0, 0)
 
@@ -184,7 +193,7 @@ def find_peak_ranges(frame, display_plots=False, title=None, labels=None, colors
         fig = plt.figure(hash(title))
         plt.clf()
 
-    background = (np.empty(frame.shape[2]),np.empty(frame.shape[2]))
+    background = (np.empty(frame.shape[2]), np.empty(frame.shape[2]))
     for channel in range(frame.shape[2]):
         low, high = find_highest_peak(channel, display_plots)
         background[0][channel] = low
@@ -197,11 +206,13 @@ def find_peak_ranges(frame, display_plots=False, title=None, labels=None, colors
 
     return background
 
+
 def plot_peaks(frame, title, labels, colors):
     # Shh this is just a helper function that makes the code more readable
     # Not to be used in practice.
     # NOTE: you need to call plt.pause(0.001) afterwards to render the plot
     find_peak_ranges(frame, True, title, labels, colors)
+
 
 def init_filter_out_highest_peak(filters, return_colorspace="any", input_colorspace="bgr"):
     """ Takes in an hsv image! Returns an hsv image"""
@@ -210,8 +221,8 @@ def init_filter_out_highest_peak(filters, return_colorspace="any", input_colorsp
     # lambda = 0.9-0.4
 
     prev_hsv_threshes = [[] for i in range(len(filters))]
-    hsv_labels = (('H','S','V'), ("red","purple","gray"))
-    bgr_labels = (('B','G','R'), ("blue","green","red"))
+    hsv_labels = (('H', 'S', 'V'), ("red", "purple", "gray"))
+    bgr_labels = (('B', 'G', 'R'), ("blue", "green", "red"))
 
     # Figure out how the procedure to convert among hsv and bgr.
     # Format of stuff in fitler_fns:
@@ -220,9 +231,9 @@ def init_filter_out_highest_peak(filters, return_colorspace="any", input_colorsp
     curr_color = input_colorspace
     for f in filters:
         if f != curr_color:
-            filter_fns.append(['c',f])
+            filter_fns.append(['c', f])
             curr_color = f
-        filter_fns.append(['f',f])
+        filter_fns.append(['f', f])
     if return_colorspace != "any" and return_colorspace != curr_color:
         filter_fns.append(['c', return_colorspace])
 
@@ -236,26 +247,26 @@ def init_filter_out_highest_peak(filters, return_colorspace="any", input_colorsp
             # calculate average
             for i in range(2):
                 for j in range(3):
-                    background_thresh[i][j] = (background_thresh[i][j] + sum([c[i][j] for c in cache])) // (len(cache) + 1)
+                    background_thresh[i][j] = (background_thresh[i][j] + sum([c[i][j] for c in cache])) // (
+                                len(cache) + 1)
 
         background_mask = cv2.bitwise_not(cv2.bitwise_or(
-                            cv2.inRange(frame[:, :, 0], background_thresh[0][0], background_thresh[1][0]),
-                            cv2.inRange(frame[:, :, 1], background_thresh[0][1], background_thresh[1][1]),
-                            cv2.inRange(frame[:, :, 2], background_thresh[0][2], background_thresh[1][2])
-                        ))
-        no_background = cv2.bitwise_and(frame,frame, mask=background_mask)
+            cv2.inRange(frame[:, :, 0], background_thresh[0][0], background_thresh[1][0]),
+            cv2.inRange(frame[:, :, 1], background_thresh[0][1], background_thresh[1][1]),
+            cv2.inRange(frame[:, :, 2], background_thresh[0][2], background_thresh[1][2])
+        ))
+        no_background = cv2.bitwise_and(frame, frame, mask=background_mask)
 
         return background_thresh, raw_thresh, no_background
 
     def combine_threshes(th1, th2):
-        return ([min(th1[0][0], th2[0][0]), min(th1[0][1], th2[0][1]), min(th1[0][2], th2[0][2])], 
-                    [max(th1[1][0], th2[1][0]), max(th1[1][1], th2[1][1]), max(th1[1][2], th2[1][2])])
+        return ([min(th1[0][0], th2[0][0]), min(th1[0][1], th2[0][1]), min(th1[0][2], th2[0][2])],
+                [max(th1[1][0], th2[1][0]), max(th1[1][1], th2[1][1]), max(th1[1][2], th2[1][2])])
 
     def bgr_thresh2hsv_thresh(th):
         th = cv2.cvtColor(np.array([[th[0]], [th[1]]], np.uint8), cv2.COLOR_BGR2HSV).tolist()
         return ([min(th[0][0][0], th[1][0][0]), min(th[0][0][1], th[1][0][1]), min(th[0][0][2], th[1][0][2])],
                 [max(th[0][0][0], th[1][0][0]), max(th[0][0][1], th[1][0][1]), max(th[0][0][2], th[1][0][2])])
-
 
     def do_filter(frame, display_plots=False):
         nonlocal prev_hsv_threshes
@@ -298,32 +309,33 @@ def init_filter_out_highest_peak(filters, return_colorspace="any", input_colorsp
 
     return do_filter
 
+
 def keep_highest_valued_peaks_mask(frame, num_peaks=1, display_plots=False, title=None, label='1', color='blue'):
     """ Returns a mask for the frame that keeps the num_peaks highest peaks in the histogram of
         pixel values.
         Only works for grayscale/1-channel images (to speed this up) 
         Shape of frame must have 3 dimensions (pass in np.expand_dims(frame, 2) if erroring) """
     # Some semi-thresholded values :)
-    num_bins = max(int((np.amax(frame)-np.amin(frame)) / 4), 10)
+    num_bins = max(int((np.amax(frame) - np.amin(frame)) / 4), 10)
     hist, bins = np.histogram(frame, bins=num_bins)
-    hist[0] = 0 # get rid of stuff that was thresholded to 0
-    hist = np.hstack([hist, [0]]) # make stuff at 255 into a peak
-    bins = np.hstack([bins, [bins[bins.shape[0]-1] + 1]])
+    hist[0] = 0  # get rid of stuff that was thresholded to 0
+    hist = np.hstack([hist, [0]])  # make stuff at 255 into a peak
+    bins = np.hstack([bins, [bins[bins.shape[0] - 1] + 1]])
 
     peaks, properties = find_peaks(hist, prominence=100)
     widths = peak_widths(hist, peaks, rel_height=peak_width_height)[0]
 
     if len(peaks) > 0:
         i = len(peaks) - 1
-        mask = cv2.inRange(frame, (bins[peaks[i]]+bins[peaks[i]+1])//2-widths[i]*2,
-                                    (bins[peaks[i]]+bins[peaks[i]+1])//2+widths[i]*2)
+        mask = cv2.inRange(frame, (bins[peaks[i]] + bins[peaks[i] + 1]) // 2 - widths[i] * 2,
+                           (bins[peaks[i]] + bins[peaks[i] + 1]) // 2 + widths[i] * 2)
 
         # To support keeping multiple peaks
         for j in range(num_peaks - 1):
             i = len(peaks) - 2 - j
             if i >= 0:
-                mask = cv2.bitwise_or(cv2.inRange(frame, (bins[peaks[i]]+bins[peaks[i]+1])//2-widths[i],
-                                        (bins[peaks[i]]+bins[peaks[i]+1])//2+widths[i]), mask)
+                mask = cv2.bitwise_or(cv2.inRange(frame, (bins[peaks[i]] + bins[peaks[i] + 1]) // 2 - widths[i],
+                                                  (bins[peaks[i]] + bins[peaks[i] + 1]) // 2 + widths[i]), mask)
         # frame = cv2.bitwise_and(frame, frame, mask=mask)
     else:
         mask = np.ones(frame.shape, np.uint8)
@@ -334,18 +346,19 @@ def keep_highest_valued_peaks_mask(frame, num_peaks=1, display_plots=False, titl
 
         ax = plt.gca()
         ax.set_xlim([0, 255])
-        #Plot values in this channel
-        plt.plot(bins[1:],hist, label=label, color=color)
+        # Plot values in this channel
+        plt.plot(bins[1:], hist, label=label, color=color)
         # Plot peaks
-        plt.plot(bins[peaks+1], hist[peaks], "x")
+        plt.plot(bins[peaks + 1], hist[peaks], "x")
         # Plot peak widths
-        plt.hlines(hist[peaks]*0.9, bins[peaks+1]-widths//2, bins[peaks+1]+widths//2)
+        plt.hlines(hist[peaks] * 0.9, bins[peaks + 1] - widths // 2, bins[peaks + 1] + widths // 2)
 
         plt.title(title)
         plt.legend()
         plt.draw()
 
     return mask
+
 
 def delete_lowest_valued_peaks_mask(frame, num_peaks=1, display_plots=False, title=None, label='1', color='blue'):
     """ Returns a mask for the frame that deletes the num_peaks lowest-valued peaks in the histogram of
@@ -353,25 +366,25 @@ def delete_lowest_valued_peaks_mask(frame, num_peaks=1, display_plots=False, tit
         Only works for grayscale/1-channel images (to speed this up) """
 
     # Some semi-thresholded values :)
-    num_bins = max(int((np.amax(frame)-np.amin(frame)) / 4), 10)
+    num_bins = max(int((np.amax(frame) - np.amin(frame)) / 4), 10)
     hist, bins = np.histogram(frame, bins=num_bins)
-    hist[0] = 0 # get rid of stuff that was thresholded to 0
+    hist[0] = 0  # get rid of stuff that was thresholded to 0
 
     peaks, properties = find_peaks(hist, prominence=100)
     widths = peak_widths(hist, peaks, rel_height=peak_width_height)[0]
 
     if len(peaks) > 0:
         i = 0
-        mask = cv2.bitwise_not(cv2.inRange(frame, (bins[peaks[i]]+bins[peaks[i]+1])//2-widths[i]*2,
-                                    (bins[peaks[i]]+bins[peaks[i]+1])//2+widths[i]*2))
+        mask = cv2.bitwise_not(cv2.inRange(frame, (bins[peaks[i]] + bins[peaks[i] + 1]) // 2 - widths[i] * 2,
+                                           (bins[peaks[i]] + bins[peaks[i] + 1]) // 2 + widths[i] * 2))
 
         # To support deleting multiple peaks
         for j in range(num_peaks - 1):
             i = j + 1
             if len(peaks) > i:
                 mask = cv2.bitwise_and(cv2.bitwise_not(cv2.inRange(
-                            frame, (bins[peaks[i]]+bins[peaks[i]+1])//2-widths[i]*2,
-                                (bins[peaks[i]]+bins[peaks[i]+1])//2+widths[i]*2)), mask)
+                    frame, (bins[peaks[i]] + bins[peaks[i] + 1]) // 2 - widths[i] * 2,
+                           (bins[peaks[i]] + bins[peaks[i] + 1]) // 2 + widths[i] * 2)), mask)
     else:
         mask = np.ones(frame.shape, np.uint8)
         # frame = cv2.bitwise_and(frame, frame, mask=mask)
@@ -382,18 +395,19 @@ def delete_lowest_valued_peaks_mask(frame, num_peaks=1, display_plots=False, tit
 
         ax = plt.gca()
         ax.set_xlim([0, 255])
-        #Plot values in this channel
-        plt.plot(bins[1:],hist, label=label, color=color)
+        # Plot values in this channel
+        plt.plot(bins[1:], hist, label=label, color=color)
         # Plot peaks
-        plt.plot(bins[peaks+1], hist[peaks], "x")
+        plt.plot(bins[peaks + 1], hist[peaks], "x")
         # Plot peak widths
-        plt.hlines(hist[peaks]*0.9, bins[peaks+1]-widths//2, bins[peaks+1]+widths//2)
+        plt.hlines(hist[peaks] * 0.9, bins[peaks + 1] - widths // 2, bins[peaks + 1] + widths // 2)
 
         plt.title(title)
         plt.legend()
         plt.draw()
 
     return mask
+
 
 def remove_blotchy_chunks(frame, kernel_size=201, iterations=1, display_imgs=False):
     """ Works best when object isn't surrounded by blotchy stuff """
@@ -415,6 +429,7 @@ def remove_blotchy_chunks(frame, kernel_size=201, iterations=1, display_imgs=Fal
         cv2.imshow('blotchy result', result)
 
     return result
+
 
 def filter_out_highest_peak_multidim(frame, res=69, percentile=10, custom_weights=None, print_weights=False):
     """ Estimates the "peak-ness" of each pixel in frame across color channels
@@ -444,7 +459,7 @@ def filter_out_highest_peak_multidim(frame, res=69, percentile=10, custom_weight
         if res == 1:
             vote_arr = dist[frame]
         else:
-            dist = np.array([np.mean(dist[i*res:i*res+res]) for i in range(len(dist) // res + 1)])
+            dist = np.array([np.mean(dist[i * res:i * res + res]) for i in range(len(dist) // res + 1)])
             vote_arr = dist[frame // res]
 
         return recommended_weight, vote_arr
@@ -455,7 +470,7 @@ def filter_out_highest_peak_multidim(frame, res=69, percentile=10, custom_weight
     if print_weights:
         print('------------------------', custom_weights)
     for ch in range(frame.shape[2]):
-        weight, vote_arr = get_peak_votes(frame[:,:,ch])
+        weight, vote_arr = get_peak_votes(frame[:, :, ch])
         if custom_weights is not None:
             weight = custom_weights[ch]
         if print_weights:
@@ -472,6 +487,7 @@ def filter_out_highest_peak_multidim(frame, res=69, percentile=10, custom_weight
 
     return overall_votes, cv2.bitwise_and(frame, frame, mask=overall_mask)
 
+
 def k_means_segmentation(votes, frame_shape, num_groups=2, percentile=10):
     """ Attempts to use kmeans to segment the frame into num_group features
         (not including the background), denoted by a very large value in votes.
@@ -482,23 +498,23 @@ def k_means_segmentation(votes, frame_shape, num_groups=2, percentile=10):
 
     # Make kmeans only consider the non-background pixels
     background = np.zeros(votes.shape)
-    background[votes>=np.percentile(votes, percentile)] = 1
-    cluster_data = votes[background==0]
-    cluster_indexes = np.array(range(len(votes)))[background==0]
+    background[votes >= np.percentile(votes, percentile)] = 1
+    cluster_data = votes[background == 0]
+    cluster_indexes = np.array(range(len(votes)))[background == 0]
 
     # Do kmeans
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
     flags = cv2.KMEANS_RANDOM_CENTERS
-    compactness,labels,centers = cv2.kmeans(cluster_data,num_groups,None,criteria,10,flags)
+    compactness, labels, centers = cv2.kmeans(cluster_data, num_groups, None, criteria, 10, flags)
 
     # Reconstruct the original votes array with background's label = -1
     label_arr = np.empty(votes.shape)
-    label_arr[background==1] = -1
+    label_arr[background == 1] = -1
     for i in range(num_groups):
-        label_arr[cluster_indexes[labels.flatten()==i]] = i
+        label_arr[cluster_indexes[labels.flatten() == i]] = i
 
     unique_labels, label_counts = np.unique(label_arr, return_counts=True)
-    label_order = list(range(np.int0(np.amax(unique_labels)) + 2)) # something is erroring here
+    label_order = list(range(np.int0(np.amax(unique_labels)) + 2))  # something is erroring here
     if len(label_counts) < num_groups + 1:
         # add in a slot for the background if no background is found
         label_counts = np.insert(label_counts, 0, 0)
@@ -508,13 +524,14 @@ def k_means_segmentation(votes, frame_shape, num_groups=2, percentile=10):
     groups = np.empty((frame_shape[0], frame_shape[1], num_groups + 1))
     for i, l in enumerate(label_order):
         group = np.zeros(votes.shape)
-        group[label_arr.flatten()==l - 1] = 255
-        groups[:,:,i] = np.reshape(group, frame_shape[:2])
+        group[label_arr.flatten() == l - 1] = 255
+        groups[:, :, i] = np.reshape(group, frame_shape[:2])
 
     # for i in range(len(unique_labels)):
     #     cv2.imshow(str(i) + " label", groups[:,:,i])
 
     return groups
+
 
 ###########################################
 # Main Body
@@ -524,7 +541,8 @@ if __name__ == "__main__":
     # For testing porpoises
     cap = cv2.VideoCapture(args[1])
     ret, frame = cap.read()
-    out = cv2.VideoWriter('out.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 30.0, (int(frame.shape[1]*0.4), int(frame.shape[0]*0.4)))
+    out = cv2.VideoWriter('out.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 30.0,
+                          (int(frame.shape[1] * 0.4), int(frame.shape[0] * 0.4)))
 
     if testing:
         test_hsv_thresholds = init_test_hsv_thresholds(thresholds_used)
@@ -539,8 +557,10 @@ if __name__ == "__main__":
         if ret:
             frame = cv2.resize(frame, None, fx=0.4, fy=0.4)
 
-            votes, multi_filter1 = filter_out_highest_peak_multidim(np.dstack([frame, cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)]), custom_weights=[1, 1, 1, 1, 1, 1])
-            votes, multi_filter2 = filter_out_highest_peak_multidim(np.dstack([frame, cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)]))
+            votes, multi_filter1 = filter_out_highest_peak_multidim(
+                np.dstack([frame, cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)]), custom_weights=[1, 1, 1, 1, 1, 1])
+            votes, multi_filter2 = filter_out_highest_peak_multidim(
+                np.dstack([frame, cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)]))
             multi_filter1 = multi_filter1[:, :, :3]
             multi_filter2 = multi_filter2[:, :, :3]
 

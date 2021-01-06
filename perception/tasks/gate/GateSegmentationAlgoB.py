@@ -7,9 +7,8 @@ from perception.tasks.TaskPerceiver import TaskPerceiver
 from perception.tasks.segmentation.combinedFilter import init_combined_filter
 import numpy as np
 import cv2 as cv
-import time
-import cProfile
 import statistics
+
 
 class GateSegmentationAlgoB(TaskPerceiver):
 	center_x_locs, center_y_locs = [], []
