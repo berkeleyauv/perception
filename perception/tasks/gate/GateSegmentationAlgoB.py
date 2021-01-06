@@ -43,10 +43,10 @@ class GateSegmentationAlgoB(TaskPerceiver):
 		# remove all contours with zero area
 		cnt = [cnt[i] for i in range(len(cnt)) if cv.contourArea(cnt[i]) > 0]
 		
-		for i in range(len(cnt)):
-			area_cnt = cv.contourArea(cnt[i])
+		for c in cnt:
+			area_cnt = cv.contourArea(c)
 			area_cnts.append(area_cnt)
-			area_rect = cv.boundingRect(cnt[i])[-2] * cv.boundingRect(cnt[i])[-1]
+			area_rect = cv.boundingRect(c)[-2] * cv.boundingRect(c)[-1]
 			area_diff.append(abs((area_rect - area_cnt)/area_cnt))
 			
 		if len(area_diff) >= 2:

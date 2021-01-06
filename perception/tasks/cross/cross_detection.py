@@ -68,9 +68,9 @@ if __name__ == "__main__":
     combined_filter = init_combined_filter()
 
     ret_tries = 0
-    while(1 and ret_tries < 50):
+    while 1 and ret_tries < 50:
         # ret,frame = cap.read()
-        if ret == True:
+        if ret:
             # frame = cv2.resize(frame, (0,0), fx=0.5, fy=0.5)
             if thresholding == "multidim":
                 votes1, threshed = filter_out_highest_peak_multidim(frame)
