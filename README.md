@@ -41,6 +41,12 @@ Code for specific tasks like
 
 etc
 
+In order to create your own algorithm to test:
+
+1. Create <your_algo>.py and put it in one of the specific task folders in perception/tasks.
+
+2. Create a class which extends the TaskPerceiver class. perception/tasks/TaskPerceiver.py includes a template with documentation for how to do this.
+
 ## vis:
 Visualization tools 
 Code for testing tasks (Ideally this should be placed a separate folder called `tests`).
