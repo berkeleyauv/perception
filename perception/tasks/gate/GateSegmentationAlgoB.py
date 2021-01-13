@@ -1,7 +1,4 @@
 from typing import Tuple
-import sys
-import os
-sys.path.append(os.path.dirname(__file__))
 
 from perception.tasks.TaskPerceiver import TaskPerceiver
 from perception.tasks.segmentation.combinedFilter import init_combined_filter

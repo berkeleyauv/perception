@@ -14,14 +14,10 @@ def run(data_sources, algorithm, save_video=False):
     window_builder = Visualizer(algorithm.kwargs)
     data = FrameWrapper(data_sources, 0.25)
     frame_count = 0
-    paused = False
     speed = 1
 
-    while data.has_next():
-        if frame_count % speed == 0 and not paused:
-            frame = next(data)
-            frame_count += 1
-
+    for frame in data:
+        if frame_count % speed == 0:
             if algorithm.kwargs:
                 state, debug_frames = algorithm.analyze(frame, debug=True, slider_vals=window_builder.update_vars())
             else:
@@ -31,19 +27,17 @@ def run(data_sources, algorithm, save_video=False):
             cv.imshow('Debug Frames', to_show)
             if save_video:
                 if out is None:
-                    # height, width, _ = to_show.shape
-                    # TODO: get codec to work
-                    # out = cv.VideoWriter('rec.mp4', cv.VideoWriter_fourcc(*'mp4v'), 60, (height, width))
                     out = imageio.get_writer('vis_rec.mp4')
-                if out:
-                    out_img = cv.cvtColor(to_show, cv.COLOR_BGR2RGB)
-                    out.append_data(out_img)
+                out_img = cv.cvtColor(to_show, cv.COLOR_BGR2RGB)
+                out.append_data(out_img)
+        frame_count += 1
 
         key = cv.waitKey(30)
         if key == ord('q') or key == 27:
             break
         if key == ord('p'):
-            paused = not paused
+            cv.waitKey(0)  # pause
+            # TODO: be able to quit and manipulate slider vars in real time while paused
         if key == ord('i') and speed > 1:
             speed -= 1
             print(f'speed {speed}')
@@ -86,7 +80,7 @@ if __name__ == '__main__':
     else:
         data_sources = [args.data]
 
-    if args.cProfiler is not None:
+    if args.profile is None:
         run(data_sources, algorithm, args.save_video)
     else:
         profile(data_sources, algorithm, args.save_video, stats=args.profile)

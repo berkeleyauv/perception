@@ -35,9 +35,9 @@ class GateSegmentationAlgoC(TaskPerceiver):
         mask = cv.inRange(
             stacked_filter_frames, np.array([100, 100, 100]), np.array([255, 255, 255])
         )
-        contours, _ = cv.findContours(mask, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
-        if contours:
-            contours.sort(key=self.findStraightness, reverse=True)
+        contours = cv.findContours(mask, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)[-2]
+        if len(contours) > 0:
+            contours.sort(reverse=True, key=self.findStraightness)
             cnts = contours[:2]
             rects = [cv.minAreaRect(c) for c in cnts]
             centers = [np.array(r[0]) for r in rects]
