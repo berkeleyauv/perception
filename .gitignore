@@ -18,3 +18,5 @@ __pycache__/
 # IDE files
 .idea
 .vs_code/
+
+data/

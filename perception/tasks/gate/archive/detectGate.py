@@ -1,9 +1,9 @@
 import numpy as np
 import cv2
 import argparse
-import sys
-from PIL import Image
 import time
+
+# TODO: port to vis + TaskPerciever format or remove
 
 video_file = 'truncated_semi_final_run.mp4'
 EPSILON = 40

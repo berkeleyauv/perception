@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 
+# TODO: port to vis + TaskPerciever format or remove
+
 from sys import argv as args
 from perception.tasks.segmentation.aggregateRescaling import init_aggregate_rescaling
 from perception.tasks.segmentation.peak_removal_adaptive_thresholding import filter_out_highest_peak_multidim
@@ -23,7 +25,7 @@ def init_combined_filter():
                             custom_weights=custom_weights,
                             print_weights=print_weights)
 
-        other_frame = other_frame[:,:,:1]
+        other_frame = other_frame[:, :, :1]
 
         if display_figs:
             cv2.imshow('original', frame)
