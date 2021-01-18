@@ -1,6 +1,8 @@
 import multiprocessing
 import pytest
 
+# TODO: integrate with pytests testing suite
+
 def sanity_test(algorithm, test_imgs):
     """ 
     Runs a sanity test on the algorithm that checks for run time and general exceptions.

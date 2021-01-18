@@ -2,6 +2,8 @@ import numpy as np
 import cv2
 import sys
 
+# TODO: port to vis + TaskPerciever format or remove
+
 #### TODO: maybe look into pattern matching
 
 # Data fron the new course footage dropbox folder
