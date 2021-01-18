@@ -9,7 +9,7 @@ import numpy as np
 from .utils import number_to_integral
 
 
-class HazeRemoval:
+class HazeRemovel:
 
     def __init__(self, image, refine=True, local_patch_size=15,
                  omega=0.95, percentage=0.001, tmin=0.1):

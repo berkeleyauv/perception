@@ -89,6 +89,7 @@ class DepthMap(TaskPerceiver):
 
     def __init__(self):
         super().__init__(beta=((0, 10), 1))
+        self.counter = 1300
 
     def analyze(self, frame: np.ndarray, debug: bool, slider_vals: Dict[str, int]):
         haze_removal_object = HazeRemoval(frame)
@@ -96,13 +97,17 @@ class DepthMap(TaskPerceiver):
         A = haze_removal_object.get_atmosphere(dark_channel)
         t = haze_removal_object.get_transmission(dark_channel, A)
         depth_map = np.log(t) / -slider_vals['beta']
-
+        depth_map = np.array(255/(np.amax(depth_map))*depth_map, np.uint8)
+        if self.counter % 100 == 0:
+            cv.imwrite('/Users/karthikdharmarajan/Downloads/DES_code-master/data/depth_map/img' + str(self.counter // 100) + '.jpg', depth_map)
+            cv.imwrite('/Users/karthikdharmarajan/Downloads/DES_code-master/data/rgb_img/img' + str(self.counter // 100) + '.jpg', frame)
+        self.counter += 1
         # PCA Experimentation
         stack = np.dstack((frame, t)).astype(np.uint8)
         combined_filter = init_combined_filter()
         depth_combined_pca = combined_filter(stack)
 
         pca = combined_filter(frame)
-        return depth_map, [t, depth_combined_pca[:,:,0], depth_map, pca[:,:,0]]
+        return depth_map, [frame]
 
 
