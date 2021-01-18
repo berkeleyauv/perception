@@ -1,8 +1,8 @@
 import cv2 as cv
 import numpy as np
-from TaskPerceiver import TaskPerceiver
+from perception.tasks.TaskPerceiver import TaskPerceiver
 from typing import Dict
-from .dark_channel.handler import process_frame as dark_channel
+from perception.misc.dark_channel.handler import process_frame as dark_channel
 
 
 class BackgroundRemoval(TaskPerceiver):

@@ -5,8 +5,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import matplotlib.ticker as ticker
 from matplotlib.figure import Figure
 from typing import Dict
-from .combinedFilterDepthMap import init_combined_filter
-from TaskPerceiver import TaskPerceiver
+from perception.tasks.TaskPerceiver import TaskPerceiver
 
 def number_to_integral(number):
     return int(np.ceil(number))
@@ -104,10 +103,6 @@ class DepthMap(TaskPerceiver):
         self.counter += 1
         # PCA Experimentation
         stack = np.dstack((frame, t)).astype(np.uint8)
-        combined_filter = init_combined_filter()
-        depth_combined_pca = combined_filter(stack)
-
-        pca = combined_filter(frame)
         return depth_map, [frame]
 
 

@@ -1,6 +1,6 @@
-from TaskPerceiver import TaskPerceiver
-from .saliency_mbd import get_saliency_mbd
-from .binarise import binarise_saliency_map
+from perception.tasks.TaskPerceiver import TaskPerceiver
+from perception.vis.TestTasks.saliency_mbd import get_saliency_mbd
+from perception.vis.TestTasks.binarise import binarise_saliency_map
 import numpy as np
 from typing import Dict
 
