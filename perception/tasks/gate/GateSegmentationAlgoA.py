@@ -1,7 +1,7 @@
 from perception.tasks.TaskPerceiver import TaskPerceiver
 from typing import Tuple
 
-from perception.tasks.segmentation.combinedFilter import init_combined_filter
+from perception.tasks.segmentation.combinedFilter import CombinedFilter
 import numpy as np
 import cv2 as cv
 
@@ -11,7 +11,7 @@ class GateSegmentationAlgoA(TaskPerceiver):
     
     def __init__(self):
         super().__init__()
-        self.combined_filter = init_combined_filter()
+        self.combined_filter = CombinedFilter().combined_filter
 
     # TODO: fix return typing
     def analyze(self, frame: np.ndarray, debug: bool, slider_vals=None) -> Tuple[float, float]:
@@ -25,7 +25,7 @@ class GateSegmentationAlgoA(TaskPerceiver):
         """
         rect1, rect2 = None, None
 
-        filtered_frame = self.combined_filter(frame, display_figs=False)
+        filtered_frame = self.combined_filter(frame)[2]
 
         max_brightness = max([b for b in filtered_frame[:, :, 0][0]])
         lowerbound = max(0.84 * max_brightness, 120)

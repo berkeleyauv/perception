@@ -2,7 +2,7 @@ from perception.tasks.TaskPerceiver import TaskPerceiver
 from typing import Tuple
 from collections import namedtuple
 
-from perception.tasks.segmentation.combinedFilter import init_combined_filter
+from perception.tasks.segmentation.combinedFilter import CombinedFilter
 import numpy as np
 import cv2 as cv
 
@@ -16,7 +16,7 @@ class GateSegmentationAlgoC(TaskPerceiver):
     def __init__(self, alpha=0.1):
         super().__init__()
         self.__alpha = alpha
-        self.combined_filter = init_combined_filter()
+        self.combined_filter = CombinedFilter().combined_filter
 
     # TODO: fix return typing
     def analyze(self, frame: np.ndarray, debug: bool) -> Tuple[float, float]:
@@ -29,7 +29,7 @@ class GateSegmentationAlgoC(TaskPerceiver):
             (x,y) coordinate with center of gate
         """
         gate_center = self.output_class(250, 250)
-        filtered_frame = self.combined_filter(frame, display_figs=False)
+        filtered_frame = self.combined_filter(frame)[2]
         filtered_frame_copies = [filtered_frame for _ in range(3)]
         stacked_filter_frames = np.concatenate(filtered_frame_copies, axis=2)
         mask = cv.inRange(

@@ -3,12 +3,13 @@ import perception.tasks.gate.GateCenterAlgo as GateSeg
 import perception.tasks.gate.GateSegmentationAlgoA as GateSegA
 import perception.tasks.gate.GateSegmentationAlgoB as GateSegB
 import perception.tasks.gate.GateSegmentationAlgoC as GateSegC
-# import perception.tasks as tasks
+import perception.tasks.segmentation.combinedFilter as CombinedFilter
 
 ALGOS = {
     'test': TestAlgo.TestAlgo,
     'gateseg': GateSeg.GateCenterAlgo,
     'gatesegA': GateSegA.GateSegmentationAlgoA,
     'gatesegB': GateSegB.GateSegmentationAlgoB,
-    'gatesegC': GateSegC.GateSegmentationAlgoC
+    'gatesegC': GateSegC.GateSegmentationAlgoC,
+    'combined_segmentations': CombinedFilter.CombinedFilter
 }

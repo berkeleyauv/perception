@@ -1,24 +1,26 @@
 import cv2
 import numpy as np
 
-# TODO: port to vis + TaskPerciever format or remove
-
-from sys import argv as args
 from perception.tasks.segmentation.aggregateRescaling import init_aggregate_rescaling
 from perception.tasks.segmentation.peak_removal_adaptive_thresholding import filter_out_highest_peak_multidim
+from perception.tasks.TaskPerceiver import TaskPerceiver
+from typing import Dict, Tuple
 
-if __name__ == "__main__":
-    if args[1] == '0':
-        cap = cv2.VideoCapture(0)
-    else:
-        cap = cv2.VideoCapture(args[1])
+class CombinedFilter(TaskPerceiver):
 
-# Returns a grayscale image
-def init_combined_filter():
-    aggregate_rescaling = init_aggregate_rescaling(False)
+    def __init__(self):
+        super().__init__()
+        self.aggregate_rescaling = init_aggregate_rescaling(False)
 
-    def combined_filter(frame, custom_weights=None, display_figs=False, print_weights=False):
-        pca_frame = aggregate_rescaling(frame) # this resizes the frame within its body
+    def analyze(self, frame: np.ndarray, debug: bool, slider_vals: Dict[str, int]=None) -> Tuple[float, float]:
+        filtered_frames = self.combined_filter(frame)
+
+        if debug:
+            return None, filtered_frames # returns None because it's a more general algorithm
+        return None
+
+    def combined_filter(self, frame, custom_weights=None, print_weights=False):
+        pca_frame = self.aggregate_rescaling(frame) # this resizes the frame within its body
 
         __, other_frame = filter_out_highest_peak_multidim(
                             np.dstack([pca_frame[:,:,0], frame]),
@@ -27,31 +29,9 @@ def init_combined_filter():
 
         other_frame = other_frame[:, :, :1]
 
-        if display_figs:
-            cv2.imshow('original', frame)
-            cv2.imshow('Aggregate Rescaling via PCA', pca_frame)
-            cv2.imshow('Peak Removal Thresholding after PCA', other_frame)
-        return other_frame
-    return combined_filter
+        return [frame, pca_frame, other_frame]
 
 if __name__ == "__main__":
-    ret = True
-    ret_tries = 0
+    from perception.vis.vis import run
 
-    # for i in range(3000):
-    #     cap.read()
-
-    combined_filter = init_combined_filter()
-
-    while 1 and ret_tries < 50:
-        ret, frame = cap.read()
-        if ret:
-            frame = cv2.resize(frame, None, fx=0.4, fy=0.4)
-            filtered_frame = combined_filter(frame, display_figs=True)
-
-            ret_tries = 0
-            k = cv2.waitKey(60) & 0xff
-            if k == 27:
-                break
-        else:
-            ret_tries += 1
+    run(['..\..\..\data\GOPR1142.MP4'], CombinedFilter(), False)
