@@ -1,15 +1,22 @@
 *.MP4
 *.mp4
+*.avi
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
 .ipynb_checkpoints/
 *.py[cod]
 *$py.class
+*.egg-info/
 
 # DS Store
 .DS_Store
 
 # C extensions
 *.so
+
+# IDE files
 .idea
+.vs_code/
+
+data/

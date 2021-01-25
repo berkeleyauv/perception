@@ -24,7 +24,7 @@ class FrameWrapper():
     WEBCAM_TRIES = 10
 
     def __init__(self, filenames, resize=1):
-        self.filenames = filenames # Get this list of relative paths to files from vis
+        self.filenames = filenames  # Get this list of relative paths to files from vis
         # There aren't any checks for resize==1 to improve speed b/c this expects resize != 1
         self.resize = resize
 
@@ -46,27 +46,24 @@ class FrameWrapper():
                     ret, frame = self.next_data[1].read()
                     if ret:
                         return cv2.resize(frame, None, fx=self.resize, fy=self.resize)
-                    else:
-                        print("WARNING: Failed to get frame from video {}. Try {}." \
-                                .format(self.filenames[self.index], i), file=sys.stderr)
+                    print("WARNING: Failed to get frame from video {}. Try {}." \
+                            .format(self.filenames[self.index], i), file=sys.stderr)
                 self.next_data_obj()
             elif self.next_data[0] == "i": # Image
                 img = self.next_data[1]
                 self.next_data_obj()
                 if img is not None:
                     return cv2.resize(img, None, fx=self.resize, fy=self.resize)
-                else:
-                    print("WARNING: Failed to get image {}." \
-                            .format(self.filenames[self.index-1]), file=sys.stderr)
+                print("WARNING: Failed to get image {}." \
+                        .format(self.filenames[self.index-1]), file=sys.stderr)
             else: # Webcam
                 # Try to get a frame out at most WEBCAM_TRIES times.
                 for i in range(self.WEBCAM_TRIES):
                     ret, frame = self.next_data[1].read()
                     if ret:
                         return cv2.resize(frame, None, fx=self.resize, fy=self.resize)
-                    else:
-                        print("WARNING: Failed to get frame from webcam. Try {}." \
-                                .format(i), file=sys.stderr)
+                    print("WARNING: Failed to get frame from webcam. Try {}." \
+                            .format(i), file=sys.stderr)
                 self.next_data_obj()
 
         raise StopIteration

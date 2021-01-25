@@ -1,5 +1,7 @@
-from combined_filter import init_combined_filter
+from perception.tasks.segmentation.combinedFilter import init_combined_filter
 from typing import Union
+
+# TODO: port to vis + TaskPerciever format or remove
 
 if __name__ == "__main__":
     import numpy as np
@@ -31,7 +33,7 @@ def thresh_by_contour_size(
         frame, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
     )
     if contours is not None:
-        contours.sort(key=lambda c: cv2.contourArea(c), reverse=True)
+        contours.sort(key=cv2.contourArea, reverse=True)
         contours = contours[:num_contours]
 
         threshed = np.zeros(frame.shape, np.uint8)
@@ -126,13 +128,11 @@ def find_path_marker(frame, draw_figs=False, thresh=0.3):
                 )
 
             return bot_angle, top_angle
-        else:
-            if draw_figs:
-                cv2.imshow('lines bottom', frame)
-                cv2.imshow('lines top', frame)
-                cv2.imshow('frame with path marker angles', frame)
 
-            return None
+        if draw_figs:
+            cv2.imshow('lines bottom', frame)
+            cv2.imshow('lines top', frame)
+            cv2.imshow('frame with path marker angles', frame)
 
 
 def path_marker_get_new_heading(cap, is_approaching, draw_figs=False):
