@@ -96,4 +96,4 @@ class GateCenterAlgo(TaskPerceiver):
 
 if __name__ == '__main__':
     from perception.vis.vis import run
-    run(['..\..\..\data\GOPR1142.MP4'], GateCenterAlgo(), False)
+    run(['../../../../GOPR1142.MP4'], GateCenterAlgo(), False)
