@@ -10,6 +10,7 @@ class BackgroundRemoval(TaskPerceiver):
     def __init__(self, **kwargs):
         super().__init__(blur = ((0, 10), 2), lamda = ((0,10),1))
         self.prev_frame = None
+        self.knn = cv.createBackgroundSubtractorKNN()
     
     def gen_lamda_frame(self, frame, lamda):
         return (frame*lamda).astype(np.uint8)
@@ -23,7 +24,7 @@ class BackgroundRemoval(TaskPerceiver):
             self.prev_frame = cv.add(self.gen_lamda_frame(self.prev_frame,1-lamda), self.gen_lamda_frame(frame,lamda))
         return self.prev_frame
 
-    def analyze(self, frame: np.ndarray, debug: bool, slider_vals: Dict[str, int]):
+    def analyze_old(self, frame: np.ndarray, debug: bool, slider_vals: Dict[str, int]):
         # print(frame.shape)
         blur = frame
         # self.calculate_blur(frame,slider_vals["lamda"]/10)
@@ -39,6 +40,10 @@ class BackgroundRemoval(TaskPerceiver):
         # cv.fastNlMeansDenoising(no_blur, temp, 10,10, 7, 21)
         # print(blur.shape, dark.shape, otsu_dark.shape, clh.shape, no_blur.shape)
         return otsu_dark, [otsu_dark, clh, no_blur, blur, dark, frame, other, other_dark, other_otsu]
+    
+    def analyze(self, frame: np.ndarray, debug: bool, slider_vals: Dict[str, int]):
+        knn = self.knn.apply(frame)
+        return knn, [frame, knn]
 
     def threshold(self, frame, x = 0, y =255, clh = False):
         gray = cv.cvtColor(frame,cv.COLOR_BGR2GRAY)
