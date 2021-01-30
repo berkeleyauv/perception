@@ -2,7 +2,6 @@ import math
 import sys
 import operator
 import networkx as nx
-#import matplotlib.pyplot as plt
 import numpy as np
 import scipy.spatial.distance
 import scipy.signal
@@ -11,7 +10,6 @@ import skimage.io
 from skimage.segmentation import slic
 from skimage.util import img_as_float
 from scipy.optimize import minimize
-#import pdb
 
 def raster_scan(img,L,U,D):
 	n_rows = len(img)
@@ -112,7 +110,7 @@ def get_saliency_mbd(img,method='b'):
 
 	# Saliency map calculation based on: Minimum Barrier Salient Object Detection at 80 FPS
 	img_mean = np.mean(img,axis=(2))
-	sal = mbd(img_mean,3)
+	sal = mbd(img_mean,2)
 
 	if method == 'b':
 		# get the background map

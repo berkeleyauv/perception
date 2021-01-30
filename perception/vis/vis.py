@@ -52,8 +52,10 @@ def run(data_sources, algorithm, save_video=False):
 
 
 def profile(*args, stats='all'):
-    with cProfile.Profile() as pr:
-        run(*args)
+    pr = cProfile.Profile()
+    pr.enable()
+    run(*args)
+    pr.disable()
     if stats == 'all':
         pr.print_stats()
     else:
