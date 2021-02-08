@@ -1,4 +1,4 @@
-from .GateSegmentationAlgo2 import GateSegmentationAlgo
+from GateSegmentationAlgo2 import GateSegmentationAlgo
 from TaskPerceiver import TaskPerceiver
 from typing import Tuple
 from collections import namedtuple
