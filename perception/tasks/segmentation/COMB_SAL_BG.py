@@ -15,8 +15,7 @@ class COMB_SAL_BG(TaskPerceiver):
         sal = self.sal.analyze(frame, debug, slider_vals=slider_vals)
         bg = self.bg.analyze(frame,debug, slider_vals=slider_vals)
         # print(type(sal), type(bg))
-        ret = np.zeros(sal[0].shape)
-        cv.bitwise_and(sal[0],bg[0], dst=ret)
+        ret = cv.bitwise_and(sal[0],bg[0])
         # small = min(cv.s)
         # print (type(ret))
-        return frame, [frame, sal[0], bg[0], ret]
+        return frame, [frame, ret]
