@@ -11,5 +11,6 @@ class MBD(TaskPerceiver):
 
     def analyze(self, frame: np.ndarray, debug: bool, slider_vals: Dict[str, int]):
         mbd = get_saliency_mbd(frame).astype('uint8')
-        ret3,th3 = cv.threshold(mbd,0,255,cv.THRESH_BINARY+cv.THRESH_OTSU)
-        return th3, [frame, mbd, th3]
+        # ret3,th3 = cv.threshold(mbd,0,255,cv.THRESH_BINARY+cv.THRESH_OTSU)
+        # q.put(mbd)
+        return mbd, [frame, mbd]

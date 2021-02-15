@@ -12,7 +12,7 @@ import imageio
 def run(data_sources, algorithm, save_video=False):
     out = None
     window_builder = Visualizer(algorithm.kwargs)
-    data = FrameWrapper(data_sources, 0.25)
+    data = FrameWrapper(data_sources, 0.1)
     frame_count = 0
     speed = 1
 
