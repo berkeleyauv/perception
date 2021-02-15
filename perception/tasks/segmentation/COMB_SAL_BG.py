@@ -39,6 +39,4 @@ class COMB_SAL_BG(TaskPerceiver):
         sal = self.sal.analyze(frame, debug, slider_vals=slider_vals)
         bg = self.bg.analyze(frame,debug, slider_vals=slider_vals)
         ret = cv.bitwise_and(sal[0],bg[0])
-        contours = cv.findContours(ret, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
-        cv.drawContours(ret, contours[1], -1, (0,255,0), 3)
         return frame, [frame, sal[0], bg[0], ret]
