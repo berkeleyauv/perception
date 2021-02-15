@@ -12,15 +12,14 @@ from libc.math cimport exp, floor, sqrt
 np.import_array()
 
 @cython.boundscheck(False)
+@cython.wraparound(False)
 cdef raster_scan(np.ndarray[double, ndim=2] img, np.ndarray[double, ndim=2] L, np.ndarray[double, ndim=2] U, np.ndarray[double, ndim=2] D):
-	cdef int n_rows
-	cdef int n_cols
-
-	n_rows = len(img)
-	n_cols = len(img[0])
-
-	cdef int x
-	cdef int y
+	# cdef np.ndarray[double, ndim=2] img = np.ascontiguousarray(img1, dtype = double)
+	cdef int n_rows = img.shape[0]
+	cdef int n_cols = img.shape[1]
+	
+	
+	cdef Py_ssize_t x, y
 	cdef double ix
 	cdef double d
 	cdef double u1
@@ -30,16 +29,16 @@ cdef raster_scan(np.ndarray[double, ndim=2] img, np.ndarray[double, ndim=2] L, n
 	cdef double b1
 	cdef double b2
 
-	for x in range(1,n_rows - 1):
-		for y in range(1,n_cols - 1):
-			ix = img[x][y]
-			d = D[x][y]
+	for x in xrange(1,n_rows - 1):
+		for y in xrange(1,n_cols - 1):
+			ix = img[x, y]
+			d = D[x,y]
 
-			u1 = U[x-1][y]
-			l1 = L[x-1][y]
+			u1 = U[x-1,y]
+			l1 = L[x-1,y]
 
-			u2 = U[x][y-1]
-			l2 = L[x][y-1]
+			u2 = U[x,y-1]
+			l2 = L[x,y-1]
 
 			b1 = max(u1,ix) - min(l1,ix)
 			b2 = max(u2,ix) - min(l2,ix)
@@ -47,26 +46,26 @@ cdef raster_scan(np.ndarray[double, ndim=2] img, np.ndarray[double, ndim=2] L, n
 			if d <= b1 and d <= b2:
 				continue
 			elif b1 < d and b1 <= b2:
-				D[x][y] = b1
-				U[x][y] = max(u1,ix)
-				L[x][y] = min(l1,ix)
+				D[x,y] = b1
+				U[x,y] = max(u1,ix)
+				L[x,y] = min(l1,ix)
 			else:
-				D[x][y] = b2
-				U[x][y] = max(u2,ix)
-				L[x][y] = min(l2,ix)
+				D[x,y] = b2
+				U[x,y] = max(u2,ix)
+				L[x,y] = min(l2,ix)
 
 	return True
 
 @cython.boundscheck(False)
+@cython.wraparound(False)
 cdef raster_scan_inv(np.ndarray[double, ndim=2] img, np.ndarray[double, ndim=2] L, np.ndarray[double, ndim=2] U, np.ndarray[double, ndim=2] D):
 	cdef int n_rows
 	cdef int n_cols
 
-	n_rows = len(img)
-	n_cols = len(img[0])
+	n_rows = img.shape[0]
+	n_cols = img.shape[1]
 
-	cdef int x
-	cdef int y
+	cdef Py_ssize_t x, y
 	cdef double ix
 	cdef double d
 	cdef double u1
@@ -76,17 +75,17 @@ cdef raster_scan_inv(np.ndarray[double, ndim=2] img, np.ndarray[double, ndim=2] 
 	cdef double b1
 	cdef double b2
 
-	for x in range(n_rows - 2,1,-1):
-		for y in range(n_cols - 2,1,-1):
+	for x in xrange(n_rows - 2,1,-1):
+		for y in xrange(n_cols - 2,1,-1):
 			
-			ix = img[x][y]
-			d = D[x][y]
+			ix = img[x,y]
+			d = D[x,y]
 
-			u1 = U[x+1][y]
-			l1 = L[x+1][y]
+			u1 = U[x+1,y]
+			l1 = L[x+1,y]
 
-			u2 = U[x][y+1]
-			l2 = L[x][y+1]
+			u2 = U[x,y+1]
+			l2 = L[x,y+1]
 
 			b1 = max(u1,ix) - min(l1,ix)
 			b2 = max(u2,ix) - min(l2,ix)
@@ -94,29 +93,30 @@ cdef raster_scan_inv(np.ndarray[double, ndim=2] img, np.ndarray[double, ndim=2] 
 			if d <= b1 and d <= b2:
 				continue
 			elif b1 < d and b1 <= b2:
-				D[x][y] = b1
-				U[x][y] = max(u1,ix)
-				L[x][y] = min(l1,ix)
+				D[x,y] = b1
+				U[x,y] = max(u1,ix)
+				L[x,y] = min(l1,ix)
 			else:
-				D[x][y] = b2
-				U[x][y] = max(u2,ix)
-				L[x][y] = min(l2,ix)
+				D[x,y] = b2
+				U[x,y] = max(u2,ix)
+				L[x,y] = min(l2,ix)
 
 	return True
 
 @cython.boundscheck(False)
+@cython.wraparound(False)
 cdef mbd(np.ndarray[double, ndim=2] img, int num_iters):
 
-	L = np.copy(img)
-	U = np.copy(img)
-	D = np.full_like(img, 10000000)
+	cdef np.ndarray[double, ndim=2] L = np.copy(img)
+	cdef np.ndarray[double, ndim=2] U = np.copy(img)
+	cdef np.ndarray[double, ndim=2] D = np.full_like(img, 10000000)
 	D[0,:] = 0
 	D[-1,:] = 0
 	D[:,0] = 0
 	D[:,-1] = 0
 
 	cdef int x
-	for x in range(0,num_iters):
+	for x in xrange(0,num_iters):
 		if x%2 == 1:
 			raster_scan(img,L,U,D)
 		else:
@@ -124,11 +124,12 @@ cdef mbd(np.ndarray[double, ndim=2] img, int num_iters):
 
 	return D
 
-def f(x):
+cdef f(x):
 	b = 10.0
 	return 1.0 / (1.0 + exp(-b*(x - 0.5)))
 
 @cython.boundscheck(False)
+@cython.wraparound(False)
 cpdef get_saliency_mbd(np.ndarray img,method='b'):
 	# Saliency map calculation based on: Minimum Barrier Salient Object Detection at 80 FPS
 	img_mean = np.mean(img,axis=(2))
@@ -233,7 +234,8 @@ cpdef get_saliency_mbd(np.ndarray img,method='b'):
 	cdef double delta = alpha * sqrt(s)
 
 	xv,yv = np.meshgrid(np.arange(sal.shape[1]),np.arange(sal.shape[0]))
-	(w,h) = sal.shape
+	cdef int w = sal.shape[0]
+	cdef int h = sal.shape[1]
 	cdef double w2 = w/2.0
 	cdef double h2 = h/2.0
 
