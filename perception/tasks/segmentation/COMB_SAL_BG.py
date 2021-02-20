@@ -8,6 +8,8 @@ from threading import Thread
 import queue
 import concurrent.futures
 from multiprocessing import Pool
+from shapely.geometry import Polygon
+
 
 class COMB_SAL_BG(TaskPerceiver):
     def __init__(self, **kwargs):
@@ -26,7 +28,21 @@ class COMB_SAL_BG(TaskPerceiver):
     #         ret = self.bg.analyze(frame,debug, slider_vals=slider_vals)
     #     return ret
 
-    def analyze(self, frame: np.ndarray, debug: bool, slider_vals: Dict[str, int]):            
+
+    # def filter_contours(self, contour_main, contour_filter):
+    #     TODO: find algorithm to filter contour_main based upon contour_filter
+
+    def intersection_over_union(polyA, polyB):
+        polygonA_shape = Polygon(polyA)
+        polygonB_shape = Polygon(polyB)
+
+        polygon_intersection = polygonA_shape.intersection(polygonB_shape).area
+        polygon_union = polygonA_shape.area + polygonB_shape.area - polygon_intersection #inclusion exclusion
+
+        IOU = polygon_intersection / polygon_union
+        return IOU
+
+    def analyze(self, frame: np.ndarray, debug: bool, slider_vals: Dict[str, int]):
         # sal_thread = Thread(target=self.sal.analyze, args=(frame, debug, slider_vals, self.q))
         # bg_thread = Thread(target=self.bg.analyze, args=(frame, debug, slider_vals, self.q))
         # bg_thread.__setattr__('_args', (frame, debug, slider_vals, self.q))
