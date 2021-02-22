@@ -27,6 +27,12 @@ and install it
 
 Also, our training data is stored here https://www.dropbox.com/sh/rrbfqfutrmifrxs/AAAfXxlcCtWZmUELp4wXyTIxa?dl=0 so download it and unzip it in the same folder as `perception`.
 
+### Cython
+To compile cythonized code, run the following commands after `cd`ing into the folder with Cython `setup.py`
+
+    python setup.py build_ext --inplace
+    cythonize file_to_cythonize.pyx
+
 
 ## misc:
 Misc code, camera calibration etc.

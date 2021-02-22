@@ -4,6 +4,7 @@
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
+build/
 .ipynb_checkpoints/
 *.py[cod]
 *$py.class
@@ -14,6 +15,7 @@ __pycache__/
 
 # C extensions
 *.so
+*.o
 
 # IDE files
 .idea
