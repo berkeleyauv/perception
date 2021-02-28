@@ -13,6 +13,14 @@ class TestAlgo:
 
         assert run_algo(data_sources, GateSegmentationAlgoA(), gt_filename) >= best_metric
 
+    def isnamedtupleinstance(x):
+        t = type(x)
+        b = t.__bases__
+        if len(b) != 1 or b[0] != tuple: return False
+        f = getattr(t, '_fields', None)
+        if not isinstance(f, tuple): return False
+        return all(type(n)==str for n in f)
+
     def read_csv(filename):
         box_contours = []
         with open(filename, "r") as csv1:
@@ -73,6 +81,7 @@ class TestAlgo:
 
         for frame in data:
             contours = algorithm.analyze(frame)
+            assert isnamedtupleinstance(contours)
             comp_data.append(contours)
 
         gt_data = read_csv(gt_filename)
