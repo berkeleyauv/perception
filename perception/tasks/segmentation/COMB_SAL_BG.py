@@ -27,7 +27,25 @@ class COMB_SAL_BG(TaskPerceiver):
         return IOU
 
     def analyze(self, frame: np.ndarray, debug: bool, slider_vals: Dict[str, int]):
-        sal = self.sal.analyze(frame, debug, slider_vals=slider_vals)
-        bg = self.bg.analyze(frame,debug, slider_vals=slider_vals)
-        ret = cv.bitwise_and(sal[0],bg[0])
-        return frame, [frame, sal[0], bg[0], ret]
+        sal = self.sal.analyze(frame, debug, slider_vals=slider_vals)[0]
+        bg = self.bg.analyze(frame,debug, slider_vals=slider_vals)[0]
+        ret = cv.bitwise_and(sal,bg)
+
+        #Combined Contours
+        _, threshold = cv.threshold(ret, 100, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
+        _, contours, _ = cv.findContours(threshold, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+
+        #BG Contours
+        _, bg_threshold = cv.threshold(bg, 100, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
+        _, bg_contours, _ = cv.findContours(bg_threshold, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        bg_frame = np.copy(frame)
+
+        #Sal Contours
+        _, sal_threshold = cv.threshold(sal, 100, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
+        _, sal_contours, _ = cv.findContours(sal_threshold, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        sal_frame = np.copy(frame)
+
+        cv.drawContours(sal_frame, sal_contours, -1, (255,0,0))
+        cv.drawContours(frame, contours, -1, (0,255,0))
+        cv.drawContours(bg_frame, bg_contours, -1, (0,0,255))
+        return frame, [frame, sal, bg, ret, bg_frame, sal_frame]
