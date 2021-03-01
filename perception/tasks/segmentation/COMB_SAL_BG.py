@@ -12,9 +12,13 @@ class COMB_SAL_BG(TaskPerceiver):
         super().__init__(blur = ((0, 10), 2), lamda = ((0,10),1), lower_bound=((0,255), 10))
         self.sal = MBD()
         self.bg = BackgroundRemoval()
+        self.use_saliency = True
 
-    # def filter_contours(self, contour_main, contour_filter):
-    #     TODO: find algorithm to filter contour_main based upon contour_filter
+    def filter_contours(self, contours, contour_filter):
+        return filter(contour_filter, contours)
+
+    def largest_contour(self, contours):
+        return max(contours, key=cv.contourArea)
 
     def intersection_over_union(polyA, polyB):
         polygonA_shape = Polygon(polyA)
@@ -45,7 +49,20 @@ class COMB_SAL_BG(TaskPerceiver):
         _, sal_contours, _ = cv.findContours(sal_threshold, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
         sal_frame = np.copy(frame)
 
-        cv.drawContours(sal_frame, sal_contours, -1, (255,0,0))
-        cv.drawContours(frame, contours, -1, (0,255,0))
-        cv.drawContours(bg_frame, bg_contours, -1, (0,0,255))
+        largest_sal_contour = self.largest_contour(sal_contours)
+        largest_combined_contour = self.largest_contour(contours)
+        largest_bg_contour = self.largest_contour(bg_contours)
+
+        cv.drawContours(sal_frame, [largest_sal_contour], -1, (255,0,0))
+        cv.drawContours(frame, [largest_combined_contour], -1, (0,255,0))
+        cv.drawContours(bg_frame, [largest_bg_contour], -1, (0,0,255))
+        
+        M = cv.moments(largest_sal_contour)
+        cv.circle(sal_frame, (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"])), 5, (255, 0, 0), 3)
+
+        M = cv.moments(largest_combined_contour)
+        cv.circle(frame, (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"])), 5, (0, 255, 0), 3)
+
+        M = cv.moments(largest_bg_contour)
+        cv.circle(bg_frame, (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"])), 5, (0, 0, 255), 3)
         return frame, [frame, sal, bg, ret, bg_frame, sal_frame]
