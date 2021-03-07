@@ -1,7 +1,7 @@
 from typing import Tuple
 
 from perception.tasks.TaskPerceiver import TaskPerceiver
-from perception.tasks.segmentation.combinedFilter import init_combined_filter
+from perception.tasks.segmentation.combinedFilter import CombinedFilter
 import numpy as np
 import cv2 as cv
 import statistics
@@ -12,7 +12,7 @@ class GateSegmentationAlgoB(TaskPerceiver):
 
 	def __init__(self):
 		super().__init__()
-		self.combined_filter = init_combined_filter()
+		self.combined_filter = CombinedFilter().combined_filter
 
 	def analyze(self, frame: np.ndarray, debug: bool) -> Tuple[float, float]:
 		"""Takes in the background removed image and returns the center between
@@ -24,7 +24,7 @@ class GateSegmentationAlgoB(TaskPerceiver):
 			(x,y) coordinate with center of gate
 		"""
 		gate_center = (250, 250)
-		filtered_frame = self.combined_filter(frame, display_figs=False)
+		filtered_frame = self.combined_filter(frame)[2]
 		
 		max_brightness = max([b for b in filtered_frame[:, :, 0][0]])
 		lowerbound = max(0.84*max_brightness, 120)
