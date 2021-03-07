@@ -45,14 +45,14 @@ class COMB_SAL_BG(TaskPerceiver):
 
         #BG Contours
         _, bg_threshold = cv.threshold(bg, 100, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
-        _, bg_contours, _ = cv.findContours(bg_threshold, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        bg_contours, _ = cv.findContours(bg_threshold, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
         bg_frame = np.copy(frame)
 
         #Sal Contours
         _, sal_threshold = cv.threshold(sal, 100, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
-        _, sal_contours, _ = cv.findContours(sal_threshold, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        sal_contours, _ = cv.findContours(sal_threshold, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
         sal_frame = np.copy(frame)
-
+        
         largest_sal_contour = self.largest_contour(sal_contours)
         largest_bg_contour = self.largest_contour(bg_contours)
 
