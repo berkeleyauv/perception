@@ -9,7 +9,7 @@ from shapely.geometry import Polygon
 
 class COMB_SAL_BG(TaskPerceiver):
     def __init__(self, **kwargs):
-        super().__init__(switch_threshold=((5,255), 10))
+        super().__init__(switch_threshold=((5,255), 10), run_both=((0,1),0))
         self.sal = MBD()
         self.bg = BackgroundRemoval()
         self.use_saliency = True
@@ -39,41 +39,57 @@ class COMB_SAL_BG(TaskPerceiver):
     def compute_centroid_change(self, point1, point2):
         return abs(point1[0] - point2[0]) + abs(point1[1] - point2[1])
 
+    def analyze_specific_img(self, frame: np.ndarray, algorithm, debug: bool, slider_vals:Dict[str, int]):
+        analysis = algorithm(frame, debug, slider_vals=slider_vals)[0]
+        _, threshold = cv.threshold(analysis, 100, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
+        contours, _ = cv.findContours(threshold, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        largest_contour = self.largest_contour(contours)
+        contour_frame = np.copy(frame)
+        cv.drawContours(contour_frame, [largest_contour], -1, (255,0,0))
+        return largest_contour, [analysis, contour_frame]
+
     def analyze(self, frame: np.ndarray, debug: bool, slider_vals: Dict[str, int]):
-        sal = self.sal.analyze(frame, debug, slider_vals=slider_vals)[0]
-        bg = self.bg.analyze(frame,debug, slider_vals=slider_vals)[0]
-
-        #BG Contours
-        _, bg_threshold = cv.threshold(bg, 100, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
-        bg_contours, _ = cv.findContours(bg_threshold, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-        bg_frame = np.copy(frame)
-
-        #Sal Contours
-        _, sal_threshold = cv.threshold(sal, 100, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
-        sal_contours, _ = cv.findContours(sal_threshold, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-        sal_frame = np.copy(frame)
-        
-        largest_sal_contour = self.largest_contour(sal_contours)
-        largest_bg_contour = self.largest_contour(bg_contours)
-
-        cv.drawContours(sal_frame, [largest_sal_contour], -1, (255,0,0))
-        cv.drawContours(bg_frame, [largest_bg_contour], -1, (0,0,255))
-        
-        M = cv.moments(largest_sal_contour)
-        centroid_sal = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
-        cv.circle(sal_frame, centroid_sal, 5, (255, 0, 0), 3)
-
-        M_bg = cv.moments(largest_bg_contour)
-        centroid_bg = (int(M_bg["m10"] / M_bg["m00"]), int(M_bg["m01"] / M_bg["m00"]))
-        cv.circle(bg_frame, centroid_bg, 5, (0, 0, 255), 3)
-
-        
-        if self.use_saliency:
-            returned_contour = largest_sal_contour
-            used_centroid = centroid_sal
+        if not slider_vals['run_both']:
+            if self.use_saliency:
+                returned_contour, analysis = self.analyze_specific_img(frame, self.sal.analyze, debug, slider_vals)
+            else:
+                returned_contour, analysis = self.analyze_specific_img(frame, self.bg.analyze, debug, slider_vals)
+            M = cv.moments(returned_contour)
+            used_centroid = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
         else:
-            returned_contour = largest_bg_contour
-            used_centroid = centroid_bg
+            sal = self.sal.analyze(frame, debug, slider_vals=slider_vals)[0]
+            bg = self.bg.analyze(frame,debug, slider_vals=slider_vals)[0]
+
+            #BG Contours
+            _, bg_threshold = cv.threshold(bg, 100, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
+            bg_contours, _ = cv.findContours(bg_threshold, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+            bg_frame = np.copy(frame)
+
+            #Sal Contours
+            _, sal_threshold = cv.threshold(sal, 100, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
+            sal_contours, _ = cv.findContours(sal_threshold, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+            sal_frame = np.copy(frame)
+            
+            largest_sal_contour = self.largest_contour(sal_contours)
+            largest_bg_contour = self.largest_contour(bg_contours)
+
+            cv.drawContours(sal_frame, [largest_sal_contour], -1, (255,0,0))
+            cv.drawContours(bg_frame, [largest_bg_contour], -1, (0,0,255))
+            
+            M = cv.moments(largest_sal_contour)
+            centroid_sal = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+            cv.circle(sal_frame, centroid_sal, 5, (255, 0, 0), 3)
+
+            M_bg = cv.moments(largest_bg_contour)
+            centroid_bg = (int(M_bg["m10"] / M_bg["m00"]), int(M_bg["m01"] / M_bg["m00"]))
+            cv.circle(bg_frame, centroid_bg, 5, (0, 0, 255), 3)
+
+            if self.use_saliency:
+                returned_contour = largest_sal_contour
+                used_centroid = centroid_sal
+            else:
+                returned_contour = largest_bg_contour
+                used_centroid = centroid_bg
         
         if self.changed:
             self.changed = False
@@ -84,4 +100,7 @@ class COMB_SAL_BG(TaskPerceiver):
         self.prev_centroid = used_centroid
         cv.circle(frame, used_centroid, 5, (0, 255, 0), 3)
         cv.drawContours(frame, [returned_contour], -1, (0,255,0))
-        return returned_contour, [frame, sal, bg, bg_frame, sal_frame]
+
+        if slider_vals['run_both']:
+            return returned_contour, [frame, sal, bg, bg_frame, sal_frame]
+        return returned_contour, [frame] + analysis
