@@ -55,7 +55,10 @@ class COMB_SAL_BG(TaskPerceiver):
             else:
                 returned_contour, analysis = self.analyze_specific_img(frame, self.bg.analyze, debug, slider_vals)
             M = cv.moments(returned_contour)
-            used_centroid = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+            if M["m00"] == 0:
+                used_centroid = (int(M["m10"]), int(M["m00"]))
+            else:
+                used_centroid = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
         else:
             sal = self.sal.analyze(frame, debug, slider_vals=slider_vals)[0]
             bg = self.bg.analyze(frame,debug, slider_vals=slider_vals)[0]
