@@ -9,12 +9,15 @@ from shapely.geometry import Polygon
 
 class COMB_SAL_BG(TaskPerceiver):
     def __init__(self, **kwargs):
-        super().__init__(switch_threshold=((5,255), 10), run_both=((0,1),0))
+        super().__init__(heuristic_threshold=((5,255), 35), run_both=((0,1),0), 
+            centroid_distance_weight=((0,200),1), area_percentage_weight=((0,200),30))
         self.sal = MBD()
         self.bg = BackgroundRemoval()
         self.use_saliency = True
         self.prev_centroid = (0,0)
         self.changed = True
+        self.centroid_distance_weight = 1
+        self.area_percentage_weight = 1
 
     def filter_contours(self, contours, contour_filter):
         return filter(contour_filter, contours)
@@ -36,8 +39,8 @@ class COMB_SAL_BG(TaskPerceiver):
         self.use_saliency = not self.use_saliency
         self.changed = True
 
-    def compute_centroid_change(self, point1, point2):
-        return abs(point1[0] - point2[0]) + abs(point1[1] - point2[1])
+    def compute_heuristic(self, point1, point2, contour_area, img_area):
+        return self.centroid_distance_weight * (abs(point1[0] - point2[0]) + abs(point1[1] - point2[1])) + self.area_percentage_weight * contour_area / img_area
 
     def analyze_specific_img(self, frame: np.ndarray, algorithm, debug: bool, slider_vals:Dict[str, int]):
         analysis = algorithm(frame, debug, slider_vals=slider_vals)[0]
@@ -97,13 +100,15 @@ class COMB_SAL_BG(TaskPerceiver):
         if self.changed:
             self.changed = False
         else:
-            if self.compute_centroid_change(used_centroid, self.prev_centroid) > slider_vals['switch_threshold']:
+            if self.compute_heuristic(used_centroid, self.prev_centroid, cv.contourArea(returned_contour), 
+                np.shape(frame)[0] * np.shape(frame)[1]) > slider_vals['heuristic_threshold']:
                 self.switch_algorithm()
                 print('Switched!')
         self.prev_centroid = used_centroid
         cv.circle(frame, used_centroid, 5, (0, 255, 0), 3)
         cv.drawContours(frame, [returned_contour], -1, (0,255,0))
-
+        self.centroid_distance_weight = slider_vals['centroid_distance_weight']
+        self.area_percentage_weight = slider_vals['area_percentage_weight']
         if slider_vals['run_both']:
             return returned_contour, [frame, sal, bg, bg_frame, sal_frame]
         return returned_contour, [frame] + analysis
