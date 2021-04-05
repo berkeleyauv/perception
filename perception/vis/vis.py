@@ -5,14 +5,16 @@ from perception import ALGOS
 from perception.vis.FrameWrapper import FrameWrapper
 import cv2 as cv
 from perception.vis.Visualizer import Visualizer
-import cProfile
+import cProfile as cp
+import pstats
 import imageio
 
 
-def run(data_sources, algorithm, save_video=False):
+def run(data_sources, algorithm, save_video=False, resize=0.25):
+    # print(resize)
     out = None
     window_builder = Visualizer(algorithm.kwargs)
-    data = FrameWrapper(data_sources, 0.25)
+    data = FrameWrapper(data_sources, resize)
     frame_count = 0
     speed = 1
 
@@ -51,13 +53,13 @@ def run(data_sources, algorithm, save_video=False):
         out.close()
 
 
-def profile(*args, stats='all'):
-    with cProfile.Profile() as pr:
-        run(*args)
+def profile(stats='all'):
+    pr = pstats.Stats('algo_stats')
     if stats == 'all':
         pr.print_stats()
     else:
         pr.print_stats(stats)
+    os.remove('algo_stats')
 
 
 if __name__ == '__main__':
@@ -66,6 +68,7 @@ if __name__ == '__main__':
     parser.add_argument('--data', default='webcam', type=str)
     parser.add_argument('--algorithm', type=str, required=True)
     parser.add_argument('--profile', default=None, type=str)
+    parser.add_argument('--resize', default=0.25, type=float)
     parser.add_argument('--save_video', action='store_true')
     args = parser.parse_args()
 
@@ -81,6 +84,8 @@ if __name__ == '__main__':
         data_sources = [args.data]
 
     if args.profile is None:
-        run(data_sources, algorithm, args.save_video)
+        run(data_sources, algorithm, args.save_video, args.resize)
     else:
-        profile(data_sources, algorithm, args.save_video, stats=args.profile)
+        # print(args.save_video)
+        cp.run('run(data_sources, algorithm, args.save_video, args.resize)', 'algo_stats')
+        profile(stats=args.profile)

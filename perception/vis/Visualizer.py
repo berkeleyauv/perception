@@ -22,6 +22,8 @@ class Visualizer:
 		for frame in frames:
 			if len(frame.shape) == 2 or frame.shape[2] == 1:
 				frame = np.stack((frame, frame, frame), axis=2)
+				if len(frame.shape) == 4:
+					frame = frame[:, :, :, 0]
 			newLst.append((frame))
 		return newLst
 
@@ -33,6 +35,8 @@ class Visualizer:
 		width = img.shape[1]
 		dim = (width, height)
 		for frame in frames:
+			if len(frame.shape) > 3:
+				raise Exception('All of your debug frames should have 2 or 3 dimensions')
 			if frame.shape[0] != height or frame.shape[1] != width:
 				frame = cv.resize(frame, dim, interpolation=cv.INTER_AREA)
 			newLst.append(frame)
@@ -64,6 +68,7 @@ class Visualizer:
 					to_add = frames[frame_num]
 					this_row = np.hstack((this_row, to_add))
 				else:
+					a = frames[0]
 					this_row = np.hstack((this_row, np.zeros(frames[0].shape, dtype=np.uint8)))
 			if not isinstance(to_show, int):
 				to_show = np.vstack((to_show, this_row))
