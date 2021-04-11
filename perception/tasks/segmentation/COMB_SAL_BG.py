@@ -60,6 +60,9 @@ class COMB_SAL_BG(TaskPerceiver):
             cv.drawContours(contour_frame, biggest_contours, -1, (255,0,0))
             return biggest_contours, [analysis, contour_frame]
         return biggest_contours, [analysis]
+    
+    def set_num_contours(self, num_contours):
+        self.num_contours = num_contours
 
     def analyze(self, frame: np.ndarray, debug: bool, slider_vals: Dict[str, int]):
         if not slider_vals['run_both'] or not debug:
@@ -67,9 +70,8 @@ class COMB_SAL_BG(TaskPerceiver):
                 returned_contour, analysis = self.analyze_specific_img(frame, self.sal.analyze, debug, slider_vals)
             else:
                 returned_contour, analysis = self.analyze_specific_img(frame, self.bg.analyze, debug, slider_vals)
-            if len(returned_contour) == 1:
-                returned_contour = returned_contour[0]
-            M = cv.moments(returned_contour)
+            largest_contour = returned_contour[0]
+            M = cv.moments(largest_contour)
             if M["m00"] == 0:
                 used_centroid = (int(M["m10"]), int(M["m00"]))
             else:
@@ -108,11 +110,12 @@ class COMB_SAL_BG(TaskPerceiver):
             else:
                 returned_contour = largest_bg_contour
                 used_centroid = centroid_bg
+            returned_contour = [returned_contour]
         
         if self.changed:
             self.changed = False
         else:
-            if self.compute_heuristic(used_centroid, self.prev_centroid, cv.contourArea(returned_contour), 
+            if self.compute_heuristic(used_centroid, self.prev_centroid, cv.contourArea(returned_contour[0]), 
                 np.shape(frame)[0] * np.shape(frame)[1]) > slider_vals['heuristic_threshold']:
                 self.switch_algorithm()
         self.prev_centroid = used_centroid
@@ -122,7 +125,7 @@ class COMB_SAL_BG(TaskPerceiver):
         self.num_contours = slider_vals['num_contours']
         if debug:
             cv.circle(frame, used_centroid, 5, (0, 255, 0), 3)
-            cv.drawContours(frame, [returned_contour], -1, (0,255,0))
+            cv.drawContours(frame, returned_contour, -1, (0,255,0))
             if slider_vals['run_both']:
                 return returned_contour, [frame, sal, bg, bg_frame, sal_frame]
             else:
