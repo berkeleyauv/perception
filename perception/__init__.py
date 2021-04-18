@@ -7,7 +7,7 @@ import perception.tasks.segmentation.saliency_detection.MBD as MBD
 from perception.tasks.segmentation.COMB_SAL_BG import COMB_SAL_BG
 import perception.vis.TestTasks.BackgroundRemoval as BackgroundRemoval
 import perception.tasks.roulette.color_detection as RouletteColorDetector
-# import perception.tasks as tasks
+from perception.tasks.dice.DiceDetector import DiceDetector
 
 ALGOS = {
     'test': TestAlgo.TestAlgo,
@@ -18,5 +18,6 @@ ALGOS = {
     'MBD': MBD.MBD,
     'bg-rm': BackgroundRemoval.BackgroundRemoval,
     'combined': COMB_SAL_BG,
-    'roulette': RouletteColorDetector.RouletteColorDetector
+    'roulette': RouletteColorDetector.RouletteColorDetector,
+    'dice': DiceDetector
 }
