@@ -94,6 +94,6 @@ class GateCenterAlgo(TaskPerceiver):
                 (int(self.gate_center[1] + self.optical_flow_c * np.mean(mag * np.sin(ang)))))
 
 
-if __name__ == '__main__':
-    from perception.vis.vis import run
-    run(['..\..\..\data\GOPR1142.MP4'], GateCenterAlgo(), False)
+# if __name__ == '__main__':
+#     from perception.vis.vis import run
+#     run(['../../../data/GOPR1142.MP4'], GateCenterAlgo(), False)

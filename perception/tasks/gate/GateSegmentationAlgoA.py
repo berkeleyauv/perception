@@ -14,7 +14,7 @@ class GateSegmentationAlgoA(TaskPerceiver):
         self.combined_filter = CombinedFilter().combined_filter
 
     # TODO: fix return typing
-    def analyze(self, frame: np.ndarray, debug: bool, slider_vals=None) -> Tuple[float, float]:
+    def analyze(self, frame: np.ndarray, debug: bool=False, slider_vals=None) -> Tuple[float, float]:
         """Takes in the background removed image and returns the center between
         the two gate posts.
         Args:
@@ -37,6 +37,7 @@ class GateSegmentationAlgoA(TaskPerceiver):
         
         area_diff = []
         area_cnts = []
+        boundRect = None
 
         # remove all contours with zero area
         cnt = [cnt[i] for i in range(len(cnt)) if cv.contourArea(cnt[i]) > 0]
@@ -55,18 +56,21 @@ class GateSegmentationAlgoA(TaskPerceiver):
             rect2 = cv.boundingRect(cnt[min_i2])
             x1, y1, w1, h1 = rect1
             x2, y2, w2, h2 = rect2
-            cv.rectangle(debug_filter, (x1, y1), (x1 + w1, y1 + h1), (0, 255, 0), 2)
-            cv.rectangle(debug_filter, (x2, y2), (x2 + w2, y2 + h2), (0, 255, 0), 2)
+            cv.rectangle(debug_filter, (x1, y1), (x1 + w1, y1 + h1), (255, 255, 0), 2)
+            cv.rectangle(debug_filter, (x2, y2), (x2 + w2, y2 + h2), (0, 255, 255), 2)
 
             """ for csv pytest"""
             act_y = min(y1, y2)
             boundRect = (x1, act_y, x2 - x1 + w2, max(y1 - act_y + h1, y2 - act_y + h2))
             cv.rectangle(debug_filter, (int(boundRect[0]), int(boundRect[1])), \
-                         (int(boundRect[0] + boundRect[2]), int(boundRect[1] + boundRect[3])), (0, 0, 255), 2)
+                         (int(boundRect[0] + boundRect[2]), int(boundRect[1] + boundRect[3])), (0, 255, 0), 2)
 
         if debug:
             return (rect1, rect2), (frame, debug_filter)
-        return boundRect
+        if boundRect:
+            return {'gate_box': boundRect}
+        else:
+            return {'gate_box': (0, 0, 0, 0)}
         
 
 if __name__ == '__main__':
