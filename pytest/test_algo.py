@@ -7,6 +7,7 @@ from perception.tasks.gate.GateSegmentationAlgoA import GateSegmentationAlgoA
 import os
 
 class TestAlgo:
+    self.contour_names = []
     def test_segmentation(self):
         print(os.path.dirname(os.path.abspath(__file__)))
         data_sources = ["../perception/vis/datasets/GOPR1142.mp4"]
@@ -74,13 +75,17 @@ class TestAlgo:
     def evaluator(self, contour_list, ground_truth):
         num_frames = len(contour_list)
         metric = 0
-        if len(contour_list[0]) == 2:
-            comparator = []
-            for frame in ground_truth:
-                xCenter, yCenter = 0.5 * (frame[0][0] + frame[1][0]), 0.5 * (frame[0][1] + frame[2][1])
-                comparator.append([xCenter, yCenter])
-            assert len(contour_list[0]) == len(comparator[0])
-            metric = sum([self.euclidean_distance(contour_list[i]['gate_box'], comparator[i]) for i in range(num_frames)])
+        if len(contour_list[0]) > 1:
+            # comparator = []
+            # for frame in ground_truth:
+            #     xCenter, yCenter = 0.5 * (frame[0][0] + frame[1][0]), 0.5 * (frame[0][1] + frame[2][1])
+            #     comparator.append([xCenter, yCenter])
+            # assert len(contour_list[0]) == len(comparator[0])
+            # metric = sum([self.euclidean_distance(contour_list[i]['gate_box'], comparator[i]) for i in range(num_frames)])
+            for cont_type in self.contour_names:
+                assert len(contour_list[0][cont_type]) == len(ground_truth[0][cont_type])
+                metric = sum([self.intersection_over_union(4 * contour_list[i][cont_type], ground_truth[i][cont_type]) for i in
+                              range(num_frames)])
         elif len(contour_list[0]) == 1:
             assert len(contour_list[0]['gate_box']) == len(ground_truth[0])
             metric = sum([self.intersection_over_union(4 * contour_list[i]['gate_box'], ground_truth[i]) for i in range(num_frames)])
@@ -97,7 +102,7 @@ class TestAlgo:
             assert self.listofnamedtuples(contours)
             comp_data.append(contours)
 
-        metric = self.evaluator(comp_data[:4750:25], gt_data)
+        metric = self.evaluator(comp_data, gt_data)
         print('FINAL METRIC: ', metric)
         return metric
 
