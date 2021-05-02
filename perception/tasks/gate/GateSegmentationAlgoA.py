@@ -61,16 +61,16 @@ class GateSegmentationAlgoA(TaskPerceiver):
 
             """ for csv pytest"""
             act_y = min(y1, y2)
-            boundRect = (x1, act_y, x2 - x1 + w2, max(y1 - act_y + h1, y2 - act_y + h2))
+            boundRect = (x1, act_y, np.abs(x2 - x1) + w2, max(y1 - act_y + h1, y2 - act_y + h2))
             cv.rectangle(debug_filter, (int(boundRect[0]), int(boundRect[1])), \
                          (int(boundRect[0] + boundRect[2]), int(boundRect[1] + boundRect[3])), (0, 255, 0), 2)
 
         if debug:
             return (rect1, rect2), (frame, debug_filter)
         if boundRect:
-            return {'gate_box': boundRect}
+            return {'gate_box': np.array(boundRect)}
         else:
-            return {'gate_box': (0, 0, 0, 0)}
+            return {'gate_box': np.zeros(4)}
         
 
 if __name__ == '__main__':

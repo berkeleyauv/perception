@@ -24,7 +24,7 @@ class TestAlgo:
 
     def listofnamedtuples(self, lst):
         for k, v in list(lst.items()):
-            if type(k) != str or type(v) != tuple:
+            if type(k) != str or type(v) != np.ndarray:
                 return False
         return True
 
@@ -34,14 +34,17 @@ class TestAlgo:
             reader = csv.reader(csv1, delimiter=" ")
             for row in reader:
                     coords = np.array(row)[3:7]
-                    contours = [[coords[0], coords[1]], [coords[0] + coords[3], coords[1]], [coords[0], coords[1] + coords[2]], [coords[0] + coords[3], coords[1] + coords[2]]]
+                    contours = coords.astype(int)
+                    # contours = [[coords[0], coords[1]], [coords[0] + coords[3], coords[1]], [coords[0], coords[1] + coords[2]], [coords[0] + coords[3], coords[1] + coords[2]]]
                     box_contours.append(contours)
         return box_contours
 
+    def box_to_coords(self, box):
+        return ((box[0], box[1]), (box[0] + box[2], box[1]), (box[0] + box[2], box[1] + box[3]), (box[0], box[1] + box[3]))
 
     def intersection_over_union(self, polyA, polyB):
-        polygonA_shape = Polygon(polyA)
-        polygonB_shape = Polygon(polyB)
+        polygonA_shape = Polygon(self.box_to_coords(polyA))
+        polygonB_shape = Polygon(self.box_to_coords(polyB))
 
         polygon_intersection = polygonA_shape.intersection(polygonB_shape).area
         polygon_union = polygonA_shape.area + polygonB_shape.area - polygon_intersection #inclusion exclusion
@@ -74,27 +77,27 @@ class TestAlgo:
         if len(contour_list[0]) == 2:
             comparator = []
             for frame in ground_truth:
-                xCenter, yCenter = 0.5 * (ground_truth[0][0] + ground_truth[1][0]), 0.5 * (ground_truth[0][1] + ground_truth[2][1])
+                xCenter, yCenter = 0.5 * (frame[0][0] + frame[1][0]), 0.5 * (frame[0][1] + frame[2][1])
                 comparator.append([xCenter, yCenter])
             assert len(contour_list[0]) == len(comparator[0])
             metric = sum([self.euclidean_distance(contour_list[i]['gate_box'], comparator[i]) for i in range(num_frames)])
-        elif len(contour_list[0]) == 4:
-            assert len(contour_list[0]) == len(ground_truth[0])
-            metric = sum([self.intersection_over_union(contour_list[i], ground_truth[i]) for i in range(num_frames)])
+        elif len(contour_list[0]) == 1:
+            assert len(contour_list[0]['gate_box']) == len(ground_truth[0])
+            metric = sum([self.intersection_over_union(4 * contour_list[i]['gate_box'], ground_truth[i]) for i in range(num_frames)])
         return metric / num_frames
 
     def run_algo(self, data_source, algorithm, gt_filename):
         data = FrameWrapper(data_source, 0.25)
         comp_data = []
 
+        gt_data = self.read_csv(gt_filename)
+
         for frame in data:
             contours = algorithm.analyze(frame)
             assert self.listofnamedtuples(contours)
             comp_data.append(contours)
 
-        gt_data = self.read_csv(gt_filename)
-
-        metric = self.evaluator(comp_data, gt_data)
+        metric = self.evaluator(comp_data[:4750:25], gt_data)
         print('FINAL METRIC: ', metric)
         return metric
 
