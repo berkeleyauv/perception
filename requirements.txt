@@ -5,3 +5,5 @@ matplotlib
 imageio
 imageio-ffmpeg
 pytest
+cython
+scikit-image

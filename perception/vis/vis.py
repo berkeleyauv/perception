@@ -12,7 +12,7 @@ import imageio
 def run(data_sources, algorithm, save_video=False):
     out = None
     window_builder = Visualizer(algorithm.kwargs)
-    data = FrameWrapper(data_sources, 0.25)
+    data = FrameWrapper(data_sources, 0.15)
     frame_count = 0
     speed = 1
 
@@ -52,8 +52,10 @@ def run(data_sources, algorithm, save_video=False):
 
 
 def profile(*args, stats='all'):
-    with cProfile.Profile() as pr:
-        run(*args)
+    pr = cProfile.Profile()
+    pr.enable()
+    run(*args)
+    pr.disable()
     if stats == 'all':
         pr.print_stats()
     else:
