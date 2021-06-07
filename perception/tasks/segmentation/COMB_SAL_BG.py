@@ -53,7 +53,7 @@ class COMB_SAL_BG(TaskPerceiver):
     def analyze_specific_img(self, frame: np.ndarray, algorithm, debug: bool, slider_vals:Dict[str, int]):
         analysis = algorithm(frame, debug, slider_vals=slider_vals)[0]
         _, threshold = cv.threshold(analysis, 100, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
-        contours, _ = cv.findContours(threshold, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        _, contours, _ = cv.findContours(threshold, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
         biggest_contours = self.largest_contours(contours)
         if debug:
             contour_frame = np.copy(frame)

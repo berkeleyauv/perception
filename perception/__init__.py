@@ -8,6 +8,7 @@ from perception.tasks.segmentation.COMB_SAL_BG import COMB_SAL_BG
 import perception.vis.TestTasks.BackgroundRemoval as BackgroundRemoval
 import perception.tasks.roulette.color_detection as RouletteColorDetector
 from perception.tasks.dice.DiceDetector import DiceDetector
+from perception.tasks.dice.DiceCSV import DiceCSV
 
 ALGOS = {
     'test': TestAlgo.TestAlgo,
@@ -19,5 +20,6 @@ ALGOS = {
     'bg-rm': BackgroundRemoval.BackgroundRemoval,
     'combined': COMB_SAL_BG,
     'roulette': RouletteColorDetector.RouletteColorDetector,
-    'dice': DiceDetector
+    'dice': DiceDetector,
+    'dice_csv': DiceCSV
 }

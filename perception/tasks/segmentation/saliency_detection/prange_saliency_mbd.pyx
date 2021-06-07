@@ -29,8 +29,8 @@ cdef raster_scan(double [:,:] img, double [:,:] L, double [:,:] U, double [:,:] 
 	cdef double b1
 	cdef double b2
 	cdef int r2 = res//2
-	for x in xrange(1,n_rows - res - 1, res):
-		for y in xrange(1,n_cols - res - 1, res):
+	for x in range(1,n_rows - res - 1, res):
+		for y in range(1,n_cols - res - 1, res):
 			# ix = np.min(img[x:x+res,y:y+res])
 			# d = np.mean(D[x:x+res,y:y+res])
 			ix = img[x+r2,y+r2]
@@ -81,8 +81,8 @@ cdef raster_scan_inv(double [:,:] img, double [:,:] L, double [:,:] U, double [:
 	cdef double b1
 	cdef double b2
 	cdef int r2 = res//2
-	for x in xrange(n_rows - 2 - res,1,-1*res):
-		for y in xrange(n_cols - 2 - res,1,-1*res):
+	for x in range(n_rows - 2 - res,1,-1*res):
+		for y in range(n_cols - 2 - res,1,-1*res):
 			
 			# ix = np.min(img[x:x+res,y:y+res])
 			# d = np.mean(D[x:x+res,y:y+res])
@@ -127,7 +127,7 @@ cdef mbd(np.ndarray[double, ndim=2] img, int num_iters, int res):
 	D[:,-1] = 0
 
 	cdef int x
-	for x in xrange(0,num_iters):
+	for x in range(0,num_iters):
 		if x%2 == 1:
 			raster_scan(img,L,U,D,res)
 		else:
@@ -182,7 +182,7 @@ cpdef get_saliency_mbd(np.ndarray img,method='b', res = 2):
 	cdef np.ndarray[double,ndim=4] px 
 	cdef np.ndarray[double,ndim=3] px_new
 	cdef Py_ssize_t x
-	for x in xrange(4):
+	for x in range(4):
 		if x//2 == 0:
 			px = px_1  
 			px_new = px_new_1
@@ -198,7 +198,7 @@ cpdef get_saliency_mbd(np.ndarray img,method='b', res = 2):
 
 	cdef np.ndarray[double,ndim=2] img_lab_unrolled = img_lab.reshape(img_lab.shape[0]*img_lab.shape[1],3)
 	cdef np.ndarray[double,ndim=3] px_mean_2 = np.empty((4,1,3))
-	for x in xrange(4):
+	for x in range(4):
 		px_mean_2[x,0] = px_mean[x]
 		u[x] = scipy.spatial.distance.cdist(img_lab_unrolled,px_mean_2[x],'mahalanobis', VI=cov[x]).reshape((img_lab.shape[0],img_lab.shape[1]))
 		u[x] = u[x]/np.max(u[x])
