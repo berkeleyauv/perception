@@ -3,6 +3,7 @@ import numpy as np
 from perception.tasks.TaskPerceiver import TaskPerceiver
 from typing import Dict
 from perception.tasks.segmentation.COMB_SAL_BG import COMB_SAL_BG
+from perception.tasks.ReturnStructs import DiceBoxes
 
 class DiceDetector(TaskPerceiver):
     def __init__(self, **kwargs):
@@ -14,8 +15,13 @@ class DiceDetector(TaskPerceiver):
         
     def analyze(self, frame: np.ndarray, debug: bool, slider_vals: Dict[str, int]):
         contours = self.sal.analyze(frame, False, slider_vals)
+        boxes = []
         if len(contours) > 0:
             for contour in contours:
                 x,y,w,h = cv.boundingRect(contour)
-                cv.rectangle(frame,(x,y),(x+w,y+h),(255,0,0),2)            
-        return contours, [frame]
+                cv.rectangle(frame,(x,y),(x+w,y+h),(255,0,0),2)
+                boxes.append([x, y, w, h])
+        diceBoxes = DiceBoxes(*boxes, *[None for _ in range(4 - len(boxes))])
+        if debug:
+            return diceBoxes, [frame]
+        return diceBoxes
