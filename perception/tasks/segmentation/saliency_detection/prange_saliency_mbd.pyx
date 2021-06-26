@@ -48,17 +48,21 @@ cdef raster_scan(double [:,:] img, double [:,:] L, double [:,:] U, double [:,:] 
 
 			b1 = max(u1,ix) - min(l1,ix)
 			b2 = max(u2,ix) - min(l2,ix)
-
+			
 			if d <= b1 and d <= b2:
 				continue
 			elif b1 < d and b1 <= b2:
-				D[x:x+res,y:y+res] = b1
-				U[x:x+res,y:y+res] = max(u1,ix)
-				L[x:x+res,y:y+res] = min(l1,ix)
+				for i in xrange(x,x+res):
+					for j in xrange(y, y+y+res):
+						D[x:x+res,y:y+res] = b1
+						U[x:x+res,y:y+res] = max(u1,ix)
+						L[x:x+res,y:y+res] = min(l1,ix)
 			else:
-				D[x:x+res,y:y+res] = b2
-				U[x:x+res,y:y+res] = max(u2,ix)
-				L[x:x+res,y:y+res] = min(l2,ix)
+				for i in xrange(x,x+res):
+					for j in xrange(y, y+y+res):
+						D[x:x+res,y:y+res] = b2
+						U[x:x+res,y:y+res] = max(u2,ix)
+						L[x:x+res,y:y+res] = min(l2,ix)
 
 	return True
 
@@ -105,13 +109,30 @@ cdef raster_scan_inv(double [:,:] img, double [:,:] L, double [:,:] U, double [:
 			if d <= b1 and d <= b2:
 				continue
 			elif b1 < d and b1 <= b2:
-				D[x:x+res,y:y+res] = b1
-				U[x:x+res,y:y+res] = max(u1,ix)
-				L[x:x+res,y:y+res] = min(l1,ix)
+				v1 = max(u1,ix)
+				v2 = min(l1,ix)
+				for i in xrange(x,x+res):
+					for j in xrange(y, y+y+res):
+						D[x:x+res,y:y+res] = b1
+						U[x:x+res,y:y+res] = v1
+						L[x:x+res,y:y+res] = v2
 			else:
-				D[x:x+res,y:y+res] = b2
-				U[x:x+res,y:y+res] = max(u2,ix)
-				L[x:x+res,y:y+res] = min(l2,ix)
+				v1 = max(u2,ix)
+				v2 = min(l2,ix)
+				for i in xrange(x,x+res):
+					for j in xrange(y, y+y+res):
+						D[x:x+res,y:y+res] = b2
+						U[x:x+res,y:y+res] = v1
+						L[x:x+res,y:y+res] = v2
+
+			# elif b1 < d and b1 <= b2:
+			# 	D[x:x+res,y:y+res] = b1
+			# 	U[x:x+res,y:y+res] = max(u1,ix)
+			# 	L[x:x+res,y:y+res] = min(l1,ix)
+			# else:
+			# 	D[x:x+res,y:y+res] = b2
+			# 	U[x:x+res,y:y+res] = max(u2,ix)
+			# 	L[x:x+res,y:y+res] = min(l2,ix)
 
 	return True
 
