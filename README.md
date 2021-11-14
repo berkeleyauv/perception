@@ -13,25 +13,24 @@ activate it with
 
     conda activate urobotics
 
-and install all dependencies with
-
-    pip3 install -r requirements.txt
-
 Then clone the repo in a directory of your choice
 
     git clone https://github.com/berkeleyauv/perception.git
 
-and install it
+and change directory to the cloned directory and install all dependencies with
+
+    pip3 install -r requirements.txt
+
+Then install the perception module with
 
     pip3 install -e perception/
 
 Also, our training data is stored here https://www.dropbox.com/sh/rrbfqfutrmifrxs/AAAfXxlcCtWZmUELp4wXyTIxa?dl=0 so download it and unzip it in the same folder as `perception`.
 
 ### Cython
-To compile cythonized code, run the following commands after `cd`ing into the folder with Cython `setup.py`
+To compile cythonized code, run the following commands after `cd`ing into the folder with Cython `setup.py` (`perception/tasks/segmentation/saliency_detection`)
 
     python setup.py build_ext --inplace
-    cythonize file_to_cythonize.pyx
 
 
 ## misc:
