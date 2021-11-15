@@ -27,7 +27,7 @@ class COMB_SAL_BG(TaskPerceiver):
         return max(contours, key=cv.contourArea)
 
     def largest_contours(self, contours):
-        contours.sort(key=cv.contourArea)
+        contours = sorted(contours, key=cv.contourArea)
         num_selected = self.num_contours
         if len(contours) < num_selected:
             num_selected = len(contours)
