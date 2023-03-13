@@ -5,9 +5,15 @@ import torch.optim as optim
 import math
 from model import use_model
 import torch.nn as nn
+import torch
 
 def compute_loss(predicted, target):
     return nn.functional.cross_entropy(predicted, target)
+
+def compute_accuracy(predicted, target):
+    target = torch.argmax(target, dim=1)
+    predicted = torch.argmax(predicted, dim=1)
+    return torch.sum(predicted == target)
 
 def train(args):
     train_symbol_dataset = SymbolDataset(args.data_folder, duplication_factor=int(math.ceil(args.batch_size / 14.0)))
@@ -21,16 +27,20 @@ def train(args):
         num_workers=args.num_workers,
         pin_memory=True
     )
-    # eval_loader = DataLoader(
-    #     eval_symbol_dataset,
-    #     batch_size=args.batch_size,
-    #     shuffle=False,
-    #     num_workers=args.num_workers,
-    #     pin_memory=True
-    # )
+    eval_loader = DataLoader(
+        eval_symbol_dataset,
+        batch_size=args.batch_size,
+        shuffle=False,
+        num_workers=args.num_workers,
+        pin_memory=True
+    )
     for _ in range(args.e):
-        train_epoch_loss = 0.0
-        for batch_no, (data, target) in enumerate(train_loader):
+        train_epoch_loss = torch.Tensor(0.0, device=args.device, non_blocking=True)
+        train_accuracy_count = torch.Tensor(0, device=args.device, non_blocking=True)
+        eval_epoch_loss = torch.Tensor(0.0, device=args.device, non_blocking=True)
+        eval_accuracy_count = torch.Tensor(0, device=args.device, non_blocking=True)
+        use_model.train()
+        for _, (data, target) in enumerate(train_loader):
             data = data.to(args.device, non_blocking=True)
             target = target.to(args.device, non_blocking=True)
             optimizer.zero_grad()
@@ -38,10 +48,24 @@ def train(args):
             loss = compute_loss(predictions, target)
             loss.backward()
             optimizer.step()
-            train_epoch_loss += loss.detach().cpu().numpy()
+            train_epoch_loss += loss.detach()
+            train_accuracy_count += compute_accuracy(predictions, target)
+        with torch.no_grad():
+            use_model.eval()
+            for _, (data, target) in enumerate(eval_loader):
+                data = data.to(args.device, non_blocking=True)
+                target = target.to(args.device, non_blocking=True)
+                predictions = use_model(data)
+                loss = compute_loss(predictions, target)
+                eval_epoch_loss += loss.detach()
+                eval_accuracy_count += compute_accuracy(predictions, target)
 
-        print(f"Training loss: {train_epoch_loss:.3f}")
-        # print(f"Validation loss: {valid_epoch_loss:.3f}, validation acc: {valid_epoch_acc:.3f}")
+        train_epoch_loss = train_epoch_loss.cpu().numpy()
+        eval_epoch_loss = eval_epoch_loss.cpu().numpy()
+        train_accuracy_count = train_accuracy_count.cpu().numpy()
+        eval_accuracy_count = eval_accuracy_count.cpu().numpy()
+        print(f"Training loss: {train_epoch_loss:.3f}, training acc: {train_accuracy_count / float(len(train_symbol_dataset)):.3f}")
+        print(f"Validation loss: {eval_epoch_loss:.3f}, validation acc: {eval_accuracy_count / float(len(eval_symbol_dataset)):.3f}")
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
