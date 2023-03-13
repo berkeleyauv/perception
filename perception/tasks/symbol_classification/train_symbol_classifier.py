@@ -16,6 +16,7 @@ def compute_accuracy(predicted, target):
     return torch.sum(predicted == target)
 
 def train(args):
+    use_model.to(args.device)
     train_symbol_dataset = SymbolDataset(args.data_folder, duplication_factor=int(math.ceil(args.batch_size / 14.0)))
     eval_symbol_dataset = SymbolDataset(args.data_folder, duplication_factor=3, eval=True)
     optimizer = optim.Adam(use_model.parameters(), lr=args.lr)
