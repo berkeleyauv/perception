@@ -35,14 +35,14 @@ def train(args):
         pin_memory=True
     )
     for _ in range(args.e):
-        train_epoch_loss = torch.Tensor(0.0, device=args.device, non_blocking=True)
-        train_accuracy_count = torch.Tensor(0, device=args.device, non_blocking=True)
-        eval_epoch_loss = torch.Tensor(0.0, device=args.device, non_blocking=True)
-        eval_accuracy_count = torch.Tensor(0, device=args.device, non_blocking=True)
+        train_epoch_loss = torch.Tensor(0.0, device=args.device)
+        train_accuracy_count = torch.Tensor(0, device=args.device)
+        eval_epoch_loss = torch.Tensor(0.0, device=args.device)
+        eval_accuracy_count = torch.Tensor(0, device=args.device)
         use_model.train()
         for _, (data, target) in enumerate(train_loader):
-            data = data.to(args.device, non_blocking=True)
-            target = target.to(args.device, non_blocking=True)
+            data = data.to(args.device)
+            target = target.to(args.device)
             optimizer.zero_grad()
             predictions = use_model(data)
             loss = compute_loss(predictions, target)
