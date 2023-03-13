@@ -6,6 +6,8 @@ import math
 from model import use_model
 import torch.nn as nn
 import torch
+import os
+from datetime import datetime
 
 def compute_loss(predicted, target):
     return nn.functional.cross_entropy(predicted, target)
@@ -15,9 +17,27 @@ def compute_accuracy(predicted, target):
     predicted = torch.argmax(predicted, dim=1)
     return torch.sum(predicted == target)
 
+def save_model(epochs, model, pretrained):
+    """
+    Function to save the trained model to disk.
+    """
+    torch.save({
+                'epoch': epochs,
+                'model_state_dict': model.state_dict(),
+                }, f"../model_pretrained_{pretrained}.pth")
+
 def train(args):
+    if not os.path.exists(args.output):
+        os.makedirs(args.output)
+
+    now = datetime.now()
+    dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+
+    save_dir = os.path.join(args.output, dt_string)
+    os.mkdir(save_dir)
+
     use_model.to(args.device)
-    train_symbol_dataset = SymbolDataset(args.data_folder, duplication_factor=int(math.ceil(args.batch_size / 14.0)))
+    train_symbol_dataset = SymbolDataset(args.data_folder, duplication_factor=int(math.ceil(args.batch_size / 14.0)) * 10)
     eval_symbol_dataset = SymbolDataset(args.data_folder, duplication_factor=3, eval=True)
     optimizer = optim.Adam(use_model.parameters(), lr=args.lr)
 
@@ -67,6 +87,8 @@ def train(args):
         eval_accuracy_count = eval_accuracy_count.cpu().numpy()
         print(f"Training loss: {train_epoch_loss:.3f}, training acc: {train_accuracy_count / float(len(train_symbol_dataset)):.3f}")
         print(f"Validation loss: {eval_epoch_loss:.3f}, validation acc: {eval_accuracy_count / float(len(eval_symbol_dataset)):.3f}")
+        print("Saving model...")
+        save_model(args.e, use_model, True)
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -76,5 +98,6 @@ if __name__ == '__main__':
     parser.add_argument("--batch_size", type=int, help="The batch size for training", default=64)
     parser.add_argument("--device", type=str, help="The device to run the code on, cpu or cuda:number", default="cpu")
     parser.add_argument("--lr", type=float, help="The learning rate", default=1e-3)
+    parser.add_argument("--output", type=str, help="The output directory of the classifier", default="nets")
     args = parser.parse_args()
     train(args)
