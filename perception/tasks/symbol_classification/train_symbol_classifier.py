@@ -31,7 +31,7 @@ def train(args):
         os.makedirs(args.output)
 
     now = datetime.now()
-    dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+    dt_string = now.strftime("%d-%m-%Y-%H:%M:%S")
 
     save_dir = os.path.join(args.output, dt_string)
     os.mkdir(save_dir)
