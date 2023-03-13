@@ -19,8 +19,10 @@ class AddGaussianNoiseClipped:
 
 class SymbolDataset(Dataset):
 
-    def __init__(self, data_folder) -> None:
+    def __init__(self, data_folder, duplication_factor=1, eval=False) -> None:
         super().__init__()
+        self.duplication_factor = duplication_factor
+
         abydos_folder = os.path.join(data_folder, "abydos")
         earth_folder = os.path.join(data_folder, "earth")
 
@@ -44,13 +46,23 @@ class SymbolDataset(Dataset):
             AddGaussianNoiseClipped(std=0.1),
         ])
 
+        self.eval_data = []
+        if eval:
+            for _ in range(duplication_factor):
+                for data in self.data:
+                    self.eval_data.append(self.transform(data))
+
     def __len__(self):
-        return len(self.data)
+        return len(self.data) * self.duplication_factor
     
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
         
+        if eval:
+            return self.eval_data[idx], self.classifications[idx % self.duplication_factor]
+
+        idx = idx % self.duplication_factor
         data = self.data[idx]
         classification = self.classifications[idx]
         return self.transform(data), classification
