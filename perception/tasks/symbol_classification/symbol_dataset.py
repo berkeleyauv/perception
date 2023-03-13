@@ -32,12 +32,12 @@ class SymbolDataset(Dataset):
         for file in os.listdir(abydos_folder):
             read_img = cv2.imread(os.path.join(abydos_folder, file), cv2.IMREAD_GRAYSCALE)
             self.data.append(read_img)
-            self.classifications.append(1)
+            self.classifications.append(torch.tensor([0.0, 1.0]))
 
         for file in os.listdir(earth_folder):
             read_img = cv2.imread(os.path.join(earth_folder, file), cv2.IMREAD_GRAYSCALE)
             self.data.append(read_img)
-            self.classifications.append(0)
+            self.classifications.append(torch.tensor([1.0, 0.0]))
 
         self.transform = transforms.Compose([
             transforms.ToTensor(),
@@ -47,7 +47,8 @@ class SymbolDataset(Dataset):
         ])
 
         self.eval_data = []
-        if eval:
+        self.eval = eval
+        if self.eval:
             for _ in range(duplication_factor):
                 for data in self.data:
                     self.eval_data.append(self.transform(data))
@@ -59,7 +60,7 @@ class SymbolDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
         
-        if eval:
+        if self.eval:
             return self.eval_data[idx], self.classifications[idx % self.duplication_factor]
 
         idx = idx % self.duplication_factor

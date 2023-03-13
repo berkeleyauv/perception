@@ -1,8 +1,4 @@
-import torch
-import argparse
 import torch.nn as nn
-import torch.optim as optim
-import time
 import torchvision.models as models
 import torch.nn as nn
 
@@ -16,7 +12,8 @@ def get_model(pretrained, fine_tune, num_classes):
     else:
         for params in model.parameters():
             params.requires_grad = False
+    model.features[0][0] = nn.Conv2d(1, 24, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
     model.classifier[1] = nn.Linear(in_features=1280, out_features=num_classes)
     return model
 
-model = get_model(pretrained=True, fine_tune=True, num_classes=NUM_CLASSES)
+use_model = get_model(pretrained=True, fine_tune=True, num_classes=NUM_CLASSES)
