@@ -17,14 +17,14 @@ def compute_accuracy(predicted, target):
     predicted = torch.argmax(predicted, dim=1)
     return torch.sum(predicted == target)
 
-def save_model(epochs, model, pretrained):
+def save_model(epochs, model, pretrained, save_dir):
     """
     Function to save the trained model to disk.
     """
     torch.save({
                 'epoch': epochs,
                 'model_state_dict': model.state_dict(),
-                }, f"../model_pretrained_{pretrained}.pth")
+                }, os.path.join(save_dir, f"model_pretrained_{pretrained}.pth"))
 
 def train(args):
     if not os.path.exists(args.output):
@@ -88,7 +88,7 @@ def train(args):
         print(f"Training loss: {train_epoch_loss:.3f}, training acc: {train_accuracy_count / float(len(train_symbol_dataset)):.3f}")
         print(f"Validation loss: {eval_epoch_loss:.3f}, validation acc: {eval_accuracy_count / float(len(eval_symbol_dataset)):.3f}")
         print("Saving model...")
-        save_model(args.e, use_model, True)
+        save_model(args.e, use_model, True, save_dir)
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
