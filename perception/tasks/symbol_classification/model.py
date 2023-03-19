@@ -5,7 +5,7 @@ import torch.nn as nn
 NUM_CLASSES = 2
 
 def get_model(pretrained, fine_tune, num_classes):
-    model = models.efficientnet_v2_s(pretrained=pretrained)
+    model = models.efficientnet_v2_s(weights='DEFAULT')
     if fine_tune:
         for params in model.parameters():
             params.requires_grad = True

@@ -8,6 +8,7 @@ import torch.nn as nn
 import torch
 import os
 from datetime import datetime
+from torch.utils.tensorboard import SummaryWriter
 
 def compute_loss(predicted, target):
     return nn.functional.cross_entropy(predicted, target)
@@ -34,8 +35,11 @@ def train(args):
     dt_string = now.strftime("%d-%m-%Y-%H:%M:%S")
 
     save_dir = os.path.join(args.output, dt_string)
-    os.mkdir(save_dir)
-
+    os.makedirs(save_dir)
+    
+    log_dir = os.path.join(args.output, dt_string,'log')
+    writer = SummaryWriter(log_dir)
+    
     use_model.to(args.device)
     train_symbol_dataset = SymbolDataset(args.data_folder, duplication_factor=int(math.ceil(args.batch_size / 14.0)))
     eval_symbol_dataset = SymbolDataset(args.data_folder, duplication_factor=3, eval=True)
@@ -55,13 +59,15 @@ def train(args):
         num_workers=args.num_workers,
         pin_memory=True
     )
-    for _ in range(args.e):
+    running_loss = 0
+    num_samples = 2
+    for epoch in range(args.e):
         train_epoch_loss = torch.tensor(0.0, device=args.device)
         train_accuracy_count = torch.tensor(0, device=args.device)
         eval_epoch_loss = torch.tensor(0.0, device=args.device)
         eval_accuracy_count = torch.tensor(0, device=args.device)
         use_model.train()
-        for _, (data, target) in enumerate(train_loader):
+        for i, (data, target) in enumerate(train_loader):
             data = data.to(args.device)
             target = target.to(args.device)
             optimizer.zero_grad()
@@ -71,6 +77,13 @@ def train(args):
             optimizer.step()
             train_epoch_loss += loss.detach()
             train_accuracy_count += compute_accuracy(predictions, target)
+            
+            running_loss += loss.item()
+            
+            if i % num_samples == 0:
+                writer.add_scalar('Training Loss', running_loss / num_samples, epoch * len(train_loader) + i)
+                running_loss = 0.0
+            
         with torch.no_grad():
             use_model.eval()
             for _, (data, target) in enumerate(eval_loader):
@@ -80,21 +93,31 @@ def train(args):
                 loss = compute_loss(predictions, target)
                 eval_epoch_loss += loss.detach()
                 eval_accuracy_count += compute_accuracy(predictions, target)
+            
 
         train_epoch_loss = train_epoch_loss.cpu().numpy()
         eval_epoch_loss = eval_epoch_loss.cpu().numpy()
         train_accuracy_count = train_accuracy_count.cpu().numpy()
         eval_accuracy_count = eval_accuracy_count.cpu().numpy()
-        print(f"Training loss: {train_epoch_loss:.3f}, training acc: {train_accuracy_count / float(len(train_symbol_dataset)):.3f}")
-        print(f"Validation loss: {eval_epoch_loss:.3f}, validation acc: {eval_accuracy_count / float(len(eval_symbol_dataset)):.3f}")
-        print("Saving model...")
+        
+        eval_accuracy = eval_accuracy_count / float(len(eval_symbol_dataset))
+        train_accuracy = train_accuracy_count / float(len(train_symbol_dataset))
+        writer.add_scalar('Validation loss', eval_epoch_loss, epoch * len(train_loader))
+        writer.add_scalar('Validation Acc', eval_accuracy, epoch * len(train_loader))
+        writer.add_scalar('Training Acc', train_accuracy, epoch * len(train_loader))
+        
+        print(f"Epoch: {epoch}")
+        print(f"Training loss: {train_epoch_loss:.3f}, training acc: {train_accuracy:.3f}")
+        print(f"Validation loss: {eval_epoch_loss:.3f}, validation acc: {eval_accuracy:.3f}")
+        print("Saving model...\n")
         save_model(args.e, use_model, True, save_dir)
+    writer.close()
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--data_folder", type=str, default="data", help="The absolute path to the data folder for the screenshots of symbols")
     parser.add_argument("-e", type=int, help="The number of epochs to train for the model", default=50)
-    parser.add_argument("--num_workers", type=int, help="The number of worksfor getting the batches", default=6)
+    parser.add_argument("--num_workers", type=int, help="The number of workers for getting the batches", default=6)
     parser.add_argument("--batch_size", type=int, help="The batch size for training", default=64)
     parser.add_argument("--device", type=str, help="The device to run the code on, cpu or cuda:number", default="cpu")
     parser.add_argument("--lr", type=float, help="The learning rate", default=1e-3)
