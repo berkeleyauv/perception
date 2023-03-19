@@ -32,12 +32,18 @@ class SymbolDataset(Dataset):
         for file in os.listdir(abydos_folder):
             read_img = cv2.imread(os.path.join(abydos_folder, file), cv2.IMREAD_GRAYSCALE)
             self.data.append(read_img)
-            self.classifications.append(torch.tensor([0.0, 1.0]))
+            one_hot_encoding = torch.zeros(14, dtype=float)
+            index = file.split('.')[0]
+            one_hot_encoding[int(index)] = 1.0
+            self.classifications.append(one_hot_encoding)
 
         for file in os.listdir(earth_folder):
             read_img = cv2.imread(os.path.join(earth_folder, file), cv2.IMREAD_GRAYSCALE)
             self.data.append(read_img)
-            self.classifications.append(torch.tensor([1.0, 0.0]))
+            one_hot_encoding = torch.zeros(14, dtype=float)
+            index = file.split('.')[0]
+            one_hot_encoding[int(index)] = 1.0
+            self.classifications.append(one_hot_encoding)
 
         self.transform = transforms.Compose([
             transforms.ToTensor(),
