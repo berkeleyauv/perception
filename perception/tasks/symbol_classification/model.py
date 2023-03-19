@@ -2,7 +2,7 @@ import torch.nn as nn
 import torchvision.models as models
 import torch.nn as nn
 
-NUM_CLASSES = 2
+NUM_CLASSES = 14
 
 def get_model(pretrained, fine_tune, num_classes):
     model = models.efficientnet_v2_s(weights='DEFAULT')
