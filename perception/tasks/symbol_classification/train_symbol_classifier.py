@@ -102,9 +102,9 @@ def train(args):
         
         eval_accuracy = eval_accuracy_count / float(len(eval_symbol_dataset))
         train_accuracy = train_accuracy_count / float(len(train_symbol_dataset))
-        writer.add_scalar('Validation loss', eval_epoch_loss, epoch * len(train_loader))
-        writer.add_scalar('Validation Acc', eval_accuracy, epoch * len(train_loader))
-        writer.add_scalar('Training Acc', train_accuracy, epoch * len(train_loader))
+        writer.add_scalar('Validation loss', eval_epoch_loss, epoch)
+        writer.add_scalar('Validation Acc', eval_accuracy, epoch)
+        writer.add_scalar('Training Acc', train_accuracy, epoch)
         
         print(f"Epoch: {epoch}")
         print(f"Training loss: {train_epoch_loss:.3f}, training acc: {train_accuracy:.3f}")

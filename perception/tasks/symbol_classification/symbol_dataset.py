@@ -3,6 +3,7 @@ from torch.utils.data import Dataset
 import os
 import cv2
 import torchvision.transforms.transforms as transforms
+from torch.utils.data import DataLoader
 
 class AddGaussianNoiseClipped:
 
@@ -67,20 +68,17 @@ class SymbolDataset(Dataset):
             idx = idx.tolist()
         
         if self.eval:
-            return self.eval_data[idx], self.classifications[idx % self.duplication_factor]
+            return self.eval_data[idx], self.classifications[idx % len(self.data)]
 
-        idx = idx % self.duplication_factor
+        idx = idx % len(self.data)
         data = self.data[idx]
         classification = self.classifications[idx]
         return self.transform(data), classification
 
-if __name__ == '__main__':
-    ds = SymbolDataset("data")
-    print("Dataset length: ", len(ds))
-    print(ds[0])
-    first_elem = ds[0]
-    first_elem_array = first_elem[0].numpy()
-    first_elem_array = first_elem_array.reshape((64, 64))
-    print(first_elem_array.shape)
-    cv2.imshow('hey', first_elem_array)
-    cv2.waitKey(0)
+# if __name__ == '__main__':
+    # ds = SymbolDataset("data")        
+    # first_elem = ds[1]
+    # first_elem_array = first_elem[0].numpy()
+    # first_elem_array = first_elem_array.reshape((64, 64))
+    # cv2.imshow('hey', first_elem_array)
+    # cv2.waitKey(0)
