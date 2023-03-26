@@ -50,7 +50,7 @@ class SymbolDataset(Dataset):
             transforms.ToTensor(),
             transforms.RandomRotation(180),
             transforms.RandomPerspective(distortion_scale=0.7, p=0.95),
-            AddGaussianNoiseClipped(std=0.1),
+            # AddGaussianNoiseClipped(std=0.1),
         ])
 
         self.eval_data = []
