@@ -13,7 +13,7 @@ class AddGaussianNoiseClipped:
 
     def __call__(self, img):
         img += self.std * torch.randn_like(img) + self.mean
-        return torch.clamp(img, 0.0, 255.0)
+        return torch.clamp(img, 0.0, 1.0)
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
@@ -50,7 +50,7 @@ class SymbolDataset(Dataset):
             transforms.ToTensor(),
             transforms.RandomRotation(180),
             transforms.RandomPerspective(distortion_scale=0.7, p=0.95),
-            # AddGaussianNoiseClipped(std=0.1),
+            AddGaussianNoiseClipped(std=0.05),
         ])
 
         self.eval_data = []
