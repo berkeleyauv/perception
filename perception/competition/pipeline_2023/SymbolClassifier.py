@@ -1,7 +1,7 @@
 from perception.tasks.TaskPerceiver import TaskPerceiver
 from typing import Dict
 import numpy as np
-import cv2 as cv
+import cv2
 import matplotlib.pyplot as plt
 import torch
 
