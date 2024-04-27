@@ -7,23 +7,25 @@ Code Quality [![CodeFactor](https://www.codefactor.io/repository/github/berkeley
 We will use Conda for managing environments. We recommend installing Miniconda for Python 3.8 [here](https://docs.conda.io/en/latest/miniconda.html).
 Then create an environment with
 
-    conda create -n urobotics python=3.7
+    conda create -n urobotics python=3.8
 
 activate it with
 
     conda activate urobotics
 
-and install all dependencies with
-
-    pip3 install -r requirements.txt
-
 Then clone the repo in a directory of your choice
 
     git clone https://github.com/berkeleyauv/perception.git
 
-and install it
+Change into the cloned repo directory and install it
 
-    pip3 install -e perception/
+    pip3 install -e ./
+
+
+Install all dependencies with
+
+    pip3 install -r requirements.txt
+
 
 Also, our training data is stored here https://www.dropbox.com/sh/rrbfqfutrmifrxs/AAAfXxlcCtWZmUELp4wXyTIxa?dl=0 so download it and unzip it in the same folder as `perception`.
 
@@ -76,7 +78,7 @@ After writing the code for your specific task algorithm, you can do one of two t
         }
     and then run
     
-        python vis.py --algorithm custom_name [--data <path to file/directory>] [--profile <function name>] [--save_video]
+        python perception/vis/vis.py --algorithm custom_name [--data <path to file/directory>] [--profile <function name>] [--save_video]
     The **algorithm** parameter is required. If **data** isn't specified, it'll default to your webcam. If **profile** isn't specified, it will be off by default. Add the **save_video** tag if you want to save your vis test as an mp4 file.
 
 ## wiki:
