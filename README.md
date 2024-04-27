@@ -78,7 +78,7 @@ After writing the code for your specific task algorithm, you can do one of two t
         }
     and then run
     
-        python vis.py --algorithm custom_name [--data <path to file/directory>] [--profile <function name>] [--save_video]
+        python perception/vis/vis.py --algorithm custom_name [--data <path to file/directory>] [--profile <function name>] [--save_video]
     The **algorithm** parameter is required. If **data** isn't specified, it'll default to your webcam. If **profile** isn't specified, it will be off by default. Add the **save_video** tag if you want to save your vis test as an mp4 file.
 
 ## wiki:
