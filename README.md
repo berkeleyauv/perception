@@ -7,7 +7,7 @@ Code Quality [![CodeFactor](https://www.codefactor.io/repository/github/berkeley
 We will use Conda for managing environments. We recommend installing Miniconda for Python 3.8 [here](https://docs.conda.io/en/latest/miniconda.html).
 Then create an environment with
 
-    conda create -n urobotics python=3.7
+    conda create -n urobotics python=3.8
 
 activate it with
 
@@ -17,9 +17,9 @@ Then clone the repo in a directory of your choice
 
     git clone https://github.com/berkeleyauv/perception.git
 
-and install it
+Change into the cloned repo directory and install it
 
-    pip3 install -e perception/
+    pip3 install -e ./
 
 
 Install all dependencies with
