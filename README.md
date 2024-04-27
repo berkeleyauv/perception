@@ -13,10 +13,6 @@ activate it with
 
     conda activate urobotics
 
-and install all dependencies with
-
-    pip3 install -r requirements.txt
-
 Then clone the repo in a directory of your choice
 
     git clone https://github.com/berkeleyauv/perception.git
@@ -24,6 +20,12 @@ Then clone the repo in a directory of your choice
 and install it
 
     pip3 install -e perception/
+
+
+Install all dependencies with
+
+    pip3 install -r requirements.txt
+
 
 Also, our training data is stored here https://www.dropbox.com/sh/rrbfqfutrmifrxs/AAAfXxlcCtWZmUELp4wXyTIxa?dl=0 so download it and unzip it in the same folder as `perception`.
 
