@@ -7,3 +7,4 @@ imageio-ffmpeg
 pytest
 cython
 scikit-image
+shapely
