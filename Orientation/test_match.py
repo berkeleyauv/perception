@@ -151,16 +151,12 @@ def segment_red_lab(crop: np.ndarray,
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN,  kernel, iterations=1)
     return mask
 
-
 # ══════════════════════════════════════════════════════════════════════════════
 # Blob utilities
 # ══════════════════════════════════════════════════════════════════════════════
 
+# Standard contour detection
 def largest_blob(mask: np.ndarray, min_area: int = MIN_BLOB_AREA):
-    """
-    Find the largest connected component in a binary mask.
-    Returns (blob_mask, bbox, stats_dict) or (None, None, None).
-    """
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL,
                                    cv2.CHAIN_APPROX_SIMPLE)
     if not contours:
@@ -169,27 +165,22 @@ def largest_blob(mask: np.ndarray, min_area: int = MIN_BLOB_AREA):
     if not contours:
         return None, None, None
 
-    best  = max(contours, key=cv2.contourArea)
+    best = max(contours, key=cv2.contourArea)
     x, y, w, h = cv2.boundingRect(best)
     blob_mask = np.zeros_like(mask)
     cv2.drawContours(blob_mask, [best], -1, 255, -1)
 
+    # return the mask, bounding box, and some helpful stats
     return blob_mask, (x, y, w, h), dict(
-        area = cv2.contourArea(best),
-        cx   = x + w / 2.0,
-        cy   = y + h / 2.0,
+        area = cv2.contourArea(best), # area of contour
+        cx   = x + w / 2.0, # x-center of bounding box
+        cy   = y + h / 2.0, # y-center of bounding box
         x=x, y=y, w=w, h=h,
     )
 
+# NOT CURRENTLY USED - Same idea as above, but also accounting for aspect ratio
 def largest_blob_by_aspect(mask, min_area=MIN_BLOB_AREA,
                            min_aspect=0.5, max_aspect=5.0):
-    """
-    Like largest_blob but filters by bounding box aspect ratio (w/h).
-
-    Gate post panels are roughly square → w/h between 0.2 and 5.0
-    Ropes/sticks are very thin → w/h near 0.0 → rejected
-    Horizontal bars are very wide → w/h >> 5.0 → rejected
-    """
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL,
                                    cv2.CHAIN_APPROX_SIMPLE)
     if not contours:
@@ -197,10 +188,12 @@ def largest_blob_by_aspect(mask, min_area=MIN_BLOB_AREA,
 
     valid = []
     for c in contours:
+        # 1) Filter by area
         if cv2.contourArea(c) < min_area:
             continue
         x, y, w, h = cv2.boundingRect(c)
         aspect = w / max(h, 1)
+        # 2) Filter by aspect ratio (width/height) using predefined bounds
         if min_aspect <= aspect <= max_aspect:
             valid.append(c)
 
@@ -217,128 +210,26 @@ def largest_blob_by_aspect(mask, min_area=MIN_BLOB_AREA,
         cx=x + w / 2.0, cy=y + h / 2.0,
         x=x, y=y, w=w, h=h,
     )
-
-
-# FLAWED LOGIC, NEEDS TO BE FIXED!
-#-------------------------------------------------------------------------------------------------------------------------------
-def find_horizontal_divider(red_mask: np.ndarray,
-                             min_aspect: float = 3.0):
-    """
-    Find the horizontal red divider strip — the widest flat red contour
-    in the middle 40-60% of the crop height.
-    Returns (divider_y, bbox) in crop coordinates, or (None, None).
-    """
-    h, w = red_mask.shape
-
-    # Constrain search to middle vertical band — prevents ropes at top
-    # or floor at bottom from being mistaken for the divider
-    search_top    = int(h * 0.30)
-    search_bottom = int(h * 0.70)
-    search_mask   = np.zeros_like(red_mask)
-    search_mask[search_top:search_bottom, :] = \
-        red_mask[search_top:search_bottom, :]
-
-    contours, _ = cv2.findContours(search_mask, cv2.RETR_EXTERNAL,
-                                   cv2.CHAIN_APPROX_SIMPLE)
-    best        = None
-    best_aspect = 0.0
-
-    for c in contours:
-        if cv2.contourArea(c) < MIN_BLOB_AREA:
-            continue
-        x, y, w_c, h_c = cv2.boundingRect(c)
-        aspect = w_c / max(h_c, 1)
-        if aspect > min_aspect and aspect > best_aspect:
-            best_aspect = aspect
-            best = (x, y, w_c, h_c)
-
-    if best is None:
-        return None, None
-    x, y, w_c, h_c = best
-    return y + h_c // 2, best
-
-#-------------------------------------------------------------------------------------------------------------------------------
-
-
-def largest_blob_by_aspect(mask, min_area=MIN_BLOB_AREA,
-                           min_aspect=0.2, max_aspect=5.0):
-    """
-    Like largest_blob but filters by bounding box aspect ratio (w/h).
-
-    Gate post panels are roughly square → w/h between 0.2 and 5.0
-    Ropes/sticks are very thin → w/h near 0.0 → rejected
-    Horizontal bars are very wide → w/h >> 5.0 → rejected
-    """
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL,
-                                   cv2.CHAIN_APPROX_SIMPLE)
-    if not contours:
-        return None, None, None
-
-    valid = []
-    for c in contours:
-        if cv2.contourArea(c) < min_area:
-            continue
-        x, y, w, h = cv2.boundingRect(c)
-        aspect = w / max(h, 1)
-        if min_aspect <= aspect <= max_aspect:
-            valid.append(c)
-
-    if not valid:
-        return None, None, None
-
-    best = max(valid, key=cv2.contourArea)
-    x, y, w, h = cv2.boundingRect(best)
-    blob_mask = np.zeros_like(mask)
-    cv2.drawContours(blob_mask, [best], -1, 255, -1)
-
-    return blob_mask, (x, y, w, h), dict(
-        area=cv2.contourArea(best),
-        cx=x + w / 2.0, cy=y + h / 2.0,
-        x=x, y=y, w=w, h=h,
-    )
-
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Post detection — BLACK primary
+# Post detection — BLACK as primary signal instead of RED
 # ══════════════════════════════════════════════════════════════════════════════
 
 def detect_posts(image: np.ndarray,
                  gate_roi: tuple,
                  l_threshold: int = L_THRESHOLD,
                  a_threshold: int = A_THRESHOLD):
-    """
-    Detect gate posts using the black mask as the primary signal.
-
-    Zone layout (from gate spec):
-        LEFT  post black panel → UPPER-LEFT  quadrant (black on top of left post)
-        RIGHT post black panel → LOWER-RIGHT quadrant (black on bottom of right post)
-
-    The divider_y splits upper from lower.
-    mid_x splits left from right.
-
-    Returns
-    -------
-    crop        : BGR gate crop
-    black_mask  : binary black segmentation mask on crop
-    red_mask    : binary red segmentation mask on crop (for divider display)
-    left_stats  : post geometry dict in FULL IMAGE coords (or None)
-    right_stats : post geometry dict in FULL IMAGE coords (or None)
-    divider_y   : horizontal divider y in crop coords (int)
-    """
     gx, gy, gw, gh = gate_roi
-    crop       = image[gy:gy+gh, gx:gx+gw]
+
+    # slice the gate to isolate the black half
+    crop = image[gy:gy+gh, gx:gx+gw]
+
     black_mask = segment_black_lab(crop, l_threshold)
-    red_mask   = segment_red_lab(crop,  a_threshold)
+    red_mask = np.zeros_like(black_mask) # consider deleting
 
-    # ── Find horizontal divider from red mask ─────────────────────────────────
-    divider_y, divider_bbox = find_horizontal_divider(red_mask)
-    if divider_y is None:
-        print("  [WARN] Divider not found in red mask — falling back to midpoint")
-        divider_y = gh // 2
-
+    divider_y = gh // 2
     mid_x = gw // 2
 
-    # ── Search zones ──────────────────────────────────────────────────────────
     # LEFT post: black panel is on TOP → search upper-left quadrant
     left_zone = np.zeros_like(black_mask)
     left_zone[:divider_y, :mid_x] = 255
@@ -347,7 +238,7 @@ def detect_posts(image: np.ndarray,
     right_zone = np.zeros_like(black_mask)
     right_zone[divider_y:, mid_x:] = 255
 
-    # ── Find largest black blob in each zone ──────────────────────────────────
+    # Find largest black blob in each zone
     _, _, left_stats  = largest_blob(cv2.bitwise_and(black_mask, left_zone))
     _, _, right_stats = largest_blob(cv2.bitwise_and(black_mask, right_zone))
 
@@ -367,17 +258,12 @@ def detect_posts(image: np.ndarray,
 
     return crop, black_mask, red_mask, left_stats, right_stats, divider_y
 
-
 # ══════════════════════════════════════════════════════════════════════════════
 # Alignment math
 # ══════════════════════════════════════════════════════════════════════════════
 
 def compute_alignment(left_stats, right_stats, image_width,
                       gate_roi=None, tolerance: float = TOLERANCE):
-    """
-    Yaw    — black panel width ratio (wider = more frontal = AUV angled toward)
-    Lateral — gate box center vs image center
-    """
     eps = 1e-6
     cx  = image_width / 2.0
 
@@ -401,15 +287,15 @@ def compute_alignment(left_stats, right_stats, image_width,
         width_ratio = yaw_signal = None
         cmd_yaw = "ROTATE LEFT" if right_stats is None else "ROTATE RIGHT"
 
-    # ── Lateral ───────────────────────────────────────────────────────────────
+    # Lateral: Compare the center of the gate post to the center of the frame
     if gate_roi:
         gx, gy, gw, gh = gate_roi
         gate_mid_x = gx + gw / 2.0
     elif left_stats and right_stats:
         gate_mid_x = (left_stats["img_cx"] + right_stats["img_cx"]) / 2.0
-    elif left_stats:
+    elif left_stats: # approximate if only the left post is found
         gate_mid_x = left_stats["img_cx"]
-    elif right_stats:
+    elif right_stats: # approximate if only the right post is found
         gate_mid_x = right_stats["img_cx"]
     else:
         gate_mid_x = cx
@@ -439,9 +325,8 @@ def compute_alignment(left_stats, right_stats, image_width,
         status      = status,
     )
 
-
 # ══════════════════════════════════════════════════════════════════════════════
-# Visualisation
+# Visualisation Stuff
 # ══════════════════════════════════════════════════════════════════════════════
 
 def annotate_image(canvas, gate_roi, left_stats, right_stats,
@@ -523,7 +408,6 @@ def annotate_image(canvas, gate_roi, left_stats, right_stats,
 
     return out
 
-
 def draw_dashboard(canvas: np.ndarray, aln: dict) -> None:
     """Semi-transparent navigation dashboard stamped onto canvas in-place."""
     h, w = canvas.shape[:2]
@@ -573,17 +457,10 @@ def draw_dashboard(canvas: np.ndarray, aln: dict) -> None:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Calibration
+# OPTIONAL Threshold Sliders for Calibration and Debugging Purposes
 # ══════════════════════════════════════════════════════════════════════════════
 
 def calibrate_thresholds(image: np.ndarray, gate_roi: tuple):
-    """
-    Live dual-trackbar calibration window.
-    L controls black detection (primary).
-    A controls red detection (divider only).
-    Overlay: dark blue = black pixels | bright red = red pixels.
-    Press SPACE/ENTER to confirm. Returns (l_threshold, a_threshold).
-    """
     gx, gy, gw, gh = gate_roi
     crop = image[gy:gy+gh, gx:gx+gw]
 
@@ -623,7 +500,6 @@ def calibrate_thresholds(image: np.ndarray, gate_roi: tuple):
         elif key == ord('q'):
             cv2.destroyAllWindows()
             sys.exit(0)
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Entry point
@@ -717,13 +593,14 @@ if __name__ == "__main__":
     # Left zone = green, right zone = blue
     black_colour[:divider_y, :mid_x][black_mask[:divider_y, :mid_x] == 255] = COLOR_LEFT
     black_colour[divider_y:, mid_x:][black_mask[divider_y:, mid_x:] == 255] = COLOR_RIGHT
+
     # Remaining black pixels (outside zones) shown as grey
     grey_mask = black_mask.copy()
     grey_mask[:divider_y, :mid_x] = 0
     grey_mask[divider_y:, mid_x:] = 0
     black_colour[grey_mask == 255] = (100, 100, 100)
 
-    fig, axes = plt.subplots(1, 3, figsize=(26, 7))
+    fig, axes = plt.subplots(1, 2, figsize=(26, 7))
 
     axes[0].imshow(cv2.cvtColor(canvas, cv2.COLOR_BGR2RGB))
     axes[0].set_title(
@@ -731,24 +608,18 @@ if __name__ == "__main__":
         fontsize=10)
     axes[0].axis("off")
 
-    axes[1].imshow(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
-    axes[1].set_title(f"Gate crop\nL={l_thresh}  A={a_thresh}")
+    #axes[1].imshow(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
+    #axes[1].set_title(f"Gate crop\nL={l_thresh}  A={a_thresh}")
+    #axes[1].axvline(x=mid_x,     color="white", linewidth=1, linestyle="--")
+    #axes[1].axhline(y=divider_y, color="cyan",  linewidth=1, linestyle="--")
+    #xes[1].axis("off")
+
+    axes[1].imshow(cv2.cvtColor(black_colour, cv2.COLOR_BGR2RGB))
+    axes[1].set_title("BLACK mask (L channel) — PRIMARY\n"
+                       "Green=left zone  Blue=right zone  Grey=outside zones")
     axes[1].axvline(x=mid_x,     color="white", linewidth=1, linestyle="--")
     axes[1].axhline(y=divider_y, color="cyan",  linewidth=1, linestyle="--")
     axes[1].axis("off")
-
-    axes[2].imshow(cv2.cvtColor(black_colour, cv2.COLOR_BGR2RGB))
-    axes[2].set_title("BLACK mask (L channel) — PRIMARY\n"
-                       "Green=left zone  Blue=right zone  Grey=outside zones")
-    axes[2].axvline(x=mid_x,     color="white", linewidth=1, linestyle="--")
-    axes[2].axhline(y=divider_y, color="cyan",  linewidth=1, linestyle="--")
-    axes[2].axis("off")
-
-    #axes[3].imshow(cv2.cvtColor(red_colour, cv2.COLOR_BGR2RGB))
-    #axes[3].set_title("RED mask (A channel) — divider detection only")
-    #axes[3].axvline(x=mid_x,     color="white", linewidth=1, linestyle="--")
-    #axes[3].axhline(y=divider_y, color="cyan",  linewidth=1, linestyle="--")
-    #axes[3].axis("off")
 
     plt.suptitle(
         f"STATUS: {aln['status']}   |   "
