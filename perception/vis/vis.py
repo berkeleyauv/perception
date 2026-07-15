@@ -1,16 +1,29 @@
 import argparse
 import os
 
-from perception import ALGOS
+from perception import get_perceiver
+from perception.tasks.TaskPerceiver import TaskContext
 from perception.vis.FrameWrapper import FrameWrapper
 import cv2 as cv
 from perception.vis.Visualizer import Visualizer
 import cProfile
-import imageio
 
 
-def run(data_sources, algorithm, save_video=False):
+LEGACY_ALIASES = {
+    "test": ("examples", "test"),
+    "gateseg": ("gate", "classical"),
+    "gatesegA": ("gate", "segmentation_a"),
+    "gatesegB": ("gate", "segmentation_b"),
+    "gatesegC": ("gate", "segmentation_c"),
+}
+
+
+def run(data_sources, algorithm, save_video=False, compare_algorithm=None):
     out = None
+    imageio = None
+    if save_video:
+        import imageio
+
     window_builder = Visualizer(algorithm.kwargs)
     data = FrameWrapper(data_sources, 0.15)
     frame_count = 0
@@ -18,10 +31,24 @@ def run(data_sources, algorithm, save_video=False):
 
     for frame in data:
         if frame_count % speed == 0:
-            if algorithm.kwargs:
-                state, debug_frames = algorithm.analyze(frame, debug=True, slider_vals=window_builder.update_vars())
-            else:
-                state, debug_frames = algorithm.analyze(frame, debug=True)
+            output = algorithm.predict(
+                frame,
+                context=TaskContext(
+                    debug=True,
+                    tunables=window_builder.update_vars(),
+                    frame_id=str(frame_count),
+                ),
+            )
+            debug_frames = list(output.debug_frames.values()) or [frame]
+            if compare_algorithm:
+                compare_output = compare_algorithm.predict(
+                    frame,
+                    context=TaskContext(
+                        debug=True,
+                        frame_id=str(frame_count),
+                    ),
+                )
+                debug_frames.extend(list(compare_output.debug_frames.values()) or [frame])
 
             to_show = window_builder.display(debug_frames)
             cv.imshow('Debug Frames', to_show)
@@ -62,17 +89,33 @@ def profile(*args, stats='all'):
         pr.print_stats(stats)
 
 
+def build_algorithm(task, algo, legacy_algorithm=None):
+    if legacy_algorithm:
+        task, algo = LEGACY_ALIASES.get(legacy_algorithm, (None, None))
+        if task is None:
+            raise KeyError(f"Unknown legacy algorithm alias {legacy_algorithm}")
+    if not task or not algo:
+        raise ValueError("Provide --task and --algo, or a legacy --algorithm alias.")
+    return get_perceiver(task, algo)()
+
+
 if __name__ == '__main__':
     # Parse arguments
     parser = argparse.ArgumentParser(description='Visualizes perception algorithms.')
     parser.add_argument('--data', default='webcam', type=str)
-    parser.add_argument('--algorithm', type=str, required=True)
+    parser.add_argument('--task', type=str)
+    parser.add_argument('--algo', type=str)
+    parser.add_argument('--compare', type=str)
+    parser.add_argument('--algorithm', type=str)
     parser.add_argument('--profile', default=None, type=str)
     parser.add_argument('--save_video', action='store_true')
     args = parser.parse_args()
 
     # Get algorithm class and init
-    algorithm = ALGOS[args.algorithm]()
+    algorithm = build_algorithm(args.task, args.algo, args.algorithm)
+    compare_algorithm = None
+    if args.compare:
+        compare_algorithm = build_algorithm(args.task, args.compare)
 
     # Initialize image source
     # detects args.data, get a list of all file directory when given a directory
@@ -83,6 +126,6 @@ if __name__ == '__main__':
         data_sources = [args.data]
 
     if args.profile is None:
-        run(data_sources, algorithm, args.save_video)
+        run(data_sources, algorithm, args.save_video, compare_algorithm=compare_algorithm)
     else:
-        profile(data_sources, algorithm, args.save_video, stats=args.profile)
+        profile(data_sources, algorithm, args.save_video, compare_algorithm, stats=args.profile)

@@ -1,10 +1,1 @@
-opencv-python
-scipy
-numpy
-matplotlib
-imageio
-imageio-ffmpeg
-pytest
-cython
-scikit-image
-shapely
+-r requirements-classical.txt

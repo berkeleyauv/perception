@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install lint dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-classical.txt
+      - name: Ruff
+        run: >
+          ruff check
+          perception/registry.py
+          perception/tasks/TaskPerceiver.py
+          perception/tasks/StatefulTaskTracker.py
+          perception/tasks/slalom
+          perception/vis/vis.py
+          tests
+      - name: Black
+        run: >
+          black --check
+          perception/registry.py
+          perception/tasks/TaskPerceiver.py
+          perception/tasks/StatefulTaskTracker.py
+          perception/tasks/slalom
+          perception/vis/vis.py
+          tests
+
+  test-classical:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libgl1
+      - name: Install classical dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-classical.txt
+          python -m pip install -e .
+      - name: Pytest
+        run: pytest

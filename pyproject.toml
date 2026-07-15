@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "perception"
+version = "0.1.0"
+description = "Framework-agnostic perception algorithms for Underwater Robotics at Berkeley"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "Underwater Robotics at Berkeley" },
+]
+dependencies = [
+    "numpy==2.3.0",
+    "opencv-python==4.11.0.86",
+    "scipy==1.15.3",
+    "matplotlib==3.10.3",
+    "imageio==2.37.0",
+    "imageio-ffmpeg==0.6.0",
+    "cython==3.1.2",
+    "scikit-image==0.25.2",
+    "shapely==2.1.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.4.1",
+    "ruff==0.12.2",
+    "black==25.1.0",
+]
+torch = [
+    "torch==2.7.1",
+    "ultralytics==8.3.162",
+    "tqdm==4.67.1",
+    "kornia==0.8.1",
+]
+
+[tool.setuptools.packages.find]
+include = ["perception*"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
