@@ -1,0 +1,10 @@
+numpy==2.3.0
+opencv-python==4.11.0.86
+scipy==1.17.1
+matplotlib==3.11.1
+imageio==2.37.4
+imageio-ffmpeg==0.6.0
+Cython==3.2.8
+scikit-image==0.26.0
+shapely==2.1.2
+pytest==9.1.1

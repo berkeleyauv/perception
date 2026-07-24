@@ -23,9 +23,13 @@ Change into the cloned repo directory and install it
     pip3 install -e ./
 
 
-Install all dependencies with
+Install dependencies with
 
-    pip3 install -r requirements.txt
+    pip3 install -r requirements-classical.txt
+
+If you also need YOLO/torch-based models, install the torch group instead (it includes everything in `requirements-classical.txt`, plus `torch`, `torchvision`, and `ultralytics`)
+
+    pip3 install -r requirements-torch.txt
 
 
 Also, our training data is stored here https://www.dropbox.com/sh/rrbfqfutrmifrxs/AAAfXxlcCtWZmUELp4wXyTIxa?dl=0 so download it and unzip it in the same folder as `perception`.
