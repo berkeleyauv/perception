@@ -4,10 +4,11 @@ Code Quality [![CodeFactor](https://www.codefactor.io/repository/github/berkeley
 
 ## Installation
 
-We will use Conda for managing environments. We recommend installing Miniconda for Python 3.8 [here](https://docs.conda.io/en/latest/miniconda.html).
+We will use Conda for managing environments. We recommend installing Miniconda for Python 3.11 [here](https://docs.conda.io/en/latest/miniconda.html).
+Python 3.11 is required to support YOLO models.
 Then create an environment with
 
-    conda create -n urobotics python=3.8
+    conda create -n urobotics python=3.11
 
 activate it with
 
