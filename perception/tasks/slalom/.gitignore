@@ -1,0 +1,10 @@
+.DS_Store
+.venv/
+GOPR1146 copy.MP4
+outputs/
+train_images
+__pycache__/
+*.pyc
+*.egg-info/
+test_images
+.pytest_cache
