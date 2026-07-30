@@ -1,4 +1,6 @@
-from perception.tasks.gate.GateSegmentationAlgoA import GateSegmentationAlgoA
+from perception.tasks.gate.classical.GateSegmentationAlgoA import (
+    GateSegmentationAlgoA,
+)
 from perception.tasks.TaskPerceiver import TaskPerceiver
 from collections import namedtuple
 
