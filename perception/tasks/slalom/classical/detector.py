@@ -141,8 +141,14 @@ class SlalomDetector:
             raise ValueError("frame_bgr must be a non-empty BGR image")
 
         height, width = frame_bgr.shape[:2]
-        red_mask, white_mask = self.segment_contrast(frame_bgr) if method == "contrast" else self.segment(frame_bgr)
-        red_min_aspect_ratio = self.config.dark_min_aspect_ratio if method == "contrast" else None
+        red_mask, white_mask = (
+            self.segment_contrast(frame_bgr)
+            if method == "contrast"
+            else self.segment(frame_bgr)
+        )
+        red_min_aspect_ratio = (
+            self.config.dark_min_aspect_ratio if method == "contrast" else None
+        )
 
         red_pipes = self._find_pipe_candidates(
             red_mask,
@@ -152,10 +158,14 @@ class SlalomDetector:
             min_aspect_ratio=red_min_aspect_ratio,
             contrast_frame=frame_bgr,
         )
-        white_pipes = self._find_pipe_candidates(white_mask, "white", width, height, contrast_frame=frame_bgr)
+        white_pipes = self._find_pipe_candidates(
+            white_mask, "white", width, height, contrast_frame=frame_bgr
+        )
 
         red_pipe = self._choose_red_pipe(red_pipes, width)
-        left_white_pipe, right_white_pipe = self._choose_adjacent_whites(red_pipe, white_pipes)
+        left_white_pipe, right_white_pipe = self._choose_adjacent_whites(
+            red_pipe, white_pipes
+        )
 
         return self._estimate_target(
             image_width=width,
@@ -184,8 +194,14 @@ class SlalomDetector:
             raise ValueError("frame_bgr must be a non-empty BGR image")
 
         height, width = frame_bgr.shape[:2]
-        red_mask, white_mask = self.segment_contrast(frame_bgr) if method == "contrast" else self.segment(frame_bgr)
-        white_pipes = self._find_pipe_candidates(white_mask, "white", width, height, contrast_frame=frame_bgr)
+        red_mask, white_mask = (
+            self.segment_contrast(frame_bgr)
+            if method == "contrast"
+            else self.segment(frame_bgr)
+        )
+        white_pipes = self._find_pipe_candidates(
+            white_mask, "white", width, height, contrast_frame=frame_bgr
+        )
         white_pipe = self._choose_white_proxy_pipe(white_pipes, width)
 
         if white_pipe is None:
@@ -203,7 +219,9 @@ class SlalomDetector:
                 min_vertical_alignment=0.45,
                 contrast_frame=frame_bgr,
             )
-            red_pipe = self._choose_paired_red_pipe(red_candidates, white_pipe, width, height)
+            red_pipe = self._choose_paired_red_pipe(
+                red_candidates, white_pipe, width, height
+            )
 
         if red_pipe is not None:
             target_x_pixels = (white_pipe.center_x + red_pipe.center_x) / 2
@@ -211,7 +229,9 @@ class SlalomDetector:
             bottom_y = max(white_pipe.bottom_y, red_pipe.bottom_y)
             target_x = float(np.clip(target_x_pixels / width, 0.05, 0.95))
             target_y = float(np.clip(((top_y + bottom_y) / 2) / height, 0.05, 0.95))
-            confidence = float(np.clip(0.5 * white_pipe.score + 0.5 * red_pipe.score, 0.0, 1.0))
+            confidence = float(
+                np.clip(0.5 * white_pipe.score + 0.5 * red_pipe.score, 0.0, 1.0)
+            )
             return WhitePoleEstimate(
                 target_x=target_x,
                 target_y=target_y,
@@ -223,14 +243,18 @@ class SlalomDetector:
             )
 
         if target_side is None:
-            target_side = PassSide.RIGHT if white_pipe.center_x < width / 2 else PassSide.LEFT
+            target_side = (
+                PassSide.RIGHT if white_pipe.center_x < width / 2 else PassSide.LEFT
+            )
 
         direction = -1 if target_side == PassSide.LEFT else 1
         # Apparent pole width grows as the AUV gets closer. Let it nudge the
         # target offset wider for close poles while keeping sane image bounds.
         base_offset = offset_ratio * width
         width_scaled_offset = 14.0 * white_pipe.width
-        offset_pixels = float(np.clip(max(base_offset, width_scaled_offset), 0.12 * width, 0.32 * width))
+        offset_pixels = float(
+            np.clip(max(base_offset, width_scaled_offset), 0.12 * width, 0.32 * width)
+        )
         target_x_pixels = white_pipe.center_x + direction * offset_pixels
         target_x = float(np.clip(target_x_pixels / width, 0.05, 0.95))
         target_y = float(np.clip(white_pipe.center_y / height, 0.05, 0.95))
@@ -263,12 +287,18 @@ class SlalomDetector:
         dark_mask = (diff < -self.config.dark_diff_thresh).astype(np.uint8) * 255
         bright_mask = (diff > self.config.bright_diff_thresh).astype(np.uint8) * 255
 
-        red_hue_1 = cv2.inRange(hsv, np.array(self.config.red_low_1), np.array(self.config.red_high_1))
-        red_hue_2 = cv2.inRange(hsv, np.array(self.config.red_low_2), np.array(self.config.red_high_2))
+        red_hue_1 = cv2.inRange(
+            hsv, np.array(self.config.red_low_1), np.array(self.config.red_high_1)
+        )
+        red_hue_2 = cv2.inRange(
+            hsv, np.array(self.config.red_low_2), np.array(self.config.red_high_2)
+        )
         red_hue_mask = cv2.bitwise_or(red_hue_1, red_hue_2)
         dark_mask = cv2.bitwise_or(dark_mask, red_hue_mask)
 
-        morph_kernel = np.ones((self.config.morph_kernel_size, self.config.morph_kernel_size), np.uint8)
+        morph_kernel = np.ones(
+            (self.config.morph_kernel_size, self.config.morph_kernel_size), np.uint8
+        )
         dark_mask = cv2.morphologyEx(dark_mask, cv2.MORPH_OPEN, morph_kernel)
         dark_mask = cv2.morphologyEx(dark_mask, cv2.MORPH_CLOSE, morph_kernel)
         bright_mask = cv2.morphologyEx(bright_mask, cv2.MORPH_OPEN, morph_kernel)
@@ -279,13 +309,21 @@ class SlalomDetector:
     def segment(self, frame_bgr: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         hsv = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2HSV)
 
-        red_1 = cv2.inRange(hsv, np.array(self.config.red_low_1), np.array(self.config.red_high_1))
-        red_2 = cv2.inRange(hsv, np.array(self.config.red_low_2), np.array(self.config.red_high_2))
+        red_1 = cv2.inRange(
+            hsv, np.array(self.config.red_low_1), np.array(self.config.red_high_1)
+        )
+        red_2 = cv2.inRange(
+            hsv, np.array(self.config.red_low_2), np.array(self.config.red_high_2)
+        )
         red_mask = cv2.bitwise_or(red_1, red_2)
 
-        white_mask = cv2.inRange(hsv, np.array(self.config.white_low), np.array(self.config.white_high))
+        white_mask = cv2.inRange(
+            hsv, np.array(self.config.white_low), np.array(self.config.white_high)
+        )
 
-        kernel = np.ones((self.config.morph_kernel_size, self.config.morph_kernel_size), np.uint8)
+        kernel = np.ones(
+            (self.config.morph_kernel_size, self.config.morph_kernel_size), np.uint8
+        )
         red_mask = cv2.morphologyEx(red_mask, cv2.MORPH_OPEN, kernel)
         red_mask = cv2.morphologyEx(red_mask, cv2.MORPH_CLOSE, kernel)
         white_mask = cv2.morphologyEx(white_mask, cv2.MORPH_OPEN, kernel)
@@ -297,11 +335,21 @@ class SlalomDetector:
         annotated = frame_bgr.copy()
         height, width = annotated.shape[:2]
 
-        for pipe in [estimate.left_white_pipe, estimate.red_pipe, estimate.right_white_pipe]:
+        for pipe in [
+            estimate.left_white_pipe,
+            estimate.red_pipe,
+            estimate.right_white_pipe,
+        ]:
             if pipe is None:
                 continue
             color = (0, 0, 255) if pipe.label == "red" else (255, 255, 255)
-            cv2.rectangle(annotated, (pipe.x, pipe.y), (pipe.x + pipe.width, pipe.y + pipe.height), color, 2)
+            cv2.rectangle(
+                annotated,
+                (pipe.x, pipe.y),
+                (pipe.x + pipe.width, pipe.y + pipe.height),
+                color,
+                2,
+            )
             cv2.putText(
                 annotated,
                 f"{pipe.label}:{pipe.score:.2f}",
@@ -320,13 +368,21 @@ class SlalomDetector:
 
         return annotated
 
-    def annotate_white_pole(self, frame_bgr: np.ndarray, estimate: WhitePoleEstimate) -> np.ndarray:
+    def annotate_white_pole(
+        self, frame_bgr: np.ndarray, estimate: WhitePoleEstimate
+    ) -> np.ndarray:
         annotated = frame_bgr.copy()
         height, width = annotated.shape[:2]
 
         if estimate.white_pipe is not None:
             pipe = estimate.white_pipe
-            cv2.rectangle(annotated, (pipe.x, pipe.y), (pipe.x + pipe.width, pipe.y + pipe.height), (255, 255, 255), 2)
+            cv2.rectangle(
+                annotated,
+                (pipe.x, pipe.y),
+                (pipe.x + pipe.width, pipe.y + pipe.height),
+                (255, 255, 255),
+                2,
+            )
             cv2.putText(
                 annotated,
                 f"white:{pipe.score:.2f}",
@@ -340,7 +396,13 @@ class SlalomDetector:
 
         if estimate.red_pipe is not None:
             pipe = estimate.red_pipe
-            cv2.rectangle(annotated, (pipe.x, pipe.y), (pipe.x + pipe.width, pipe.y + pipe.height), (0, 0, 255), 2)
+            cv2.rectangle(
+                annotated,
+                (pipe.x, pipe.y),
+                (pipe.x + pipe.width, pipe.y + pipe.height),
+                (0, 0, 255),
+                2,
+            )
             cv2.putText(
                 annotated,
                 f"red/dark:{pipe.score:.2f}",
@@ -371,7 +433,11 @@ class SlalomDetector:
         min_vertical_alignment: float | None = None,
         contrast_frame: np.ndarray | None = None,
     ) -> list[PipeDetection]:
-        min_aspect_ratio = self.config.min_aspect_ratio if min_aspect_ratio is None else min_aspect_ratio
+        min_aspect_ratio = (
+            self.config.min_aspect_ratio
+            if min_aspect_ratio is None
+            else min_aspect_ratio
+        )
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         candidates: list[PipeDetection] = []
         value: np.ndarray | None = None
@@ -401,27 +467,29 @@ class SlalomDetector:
             if width_ratio > self.config.max_aspect_width_ratio:
                 continue
 
-            fill_ratio, width_stability, vertical_alignment = self._shape_features(mask, contour, x, y, width, height)
+            fill_ratio, width_stability, vertical_alignment = self._shape_features(
+                mask, contour, x, y, width, height
+            )
             width_stability_threshold = (
                 min_width_stability
                 if min_width_stability is not None
-                else self.config.min_width_stability
-                if label == "red"
-                else 0.20
+                else self.config.min_width_stability if label == "red" else 0.20
             )
             vertical_alignment_threshold = (
                 min_vertical_alignment
                 if min_vertical_alignment is not None
-                else self.config.min_vertical_alignment
-                if label == "red"
-                else 0.55
+                else self.config.min_vertical_alignment if label == "red" else 0.55
             )
             if width_stability < width_stability_threshold:
                 continue
             if vertical_alignment < vertical_alignment_threshold:
                 continue
 
-            contrast_strength = self._contrast_strength(value, background, contour, label) if value is not None else 0.0
+            contrast_strength = (
+                self._contrast_strength(value, background, contour, label)
+                if value is not None
+                else 0.0
+            )
 
             vertical_score = min(aspect_ratio / (10.0 if label == "red" else 8.0), 1.0)
             size_score = min(height_ratio / 0.5, 1.0)
@@ -460,7 +528,9 @@ class SlalomDetector:
                 )
             )
 
-        return sorted(candidates, key=lambda pipe: (pipe.score, pipe.area), reverse=True)
+        return sorted(
+            candidates, key=lambda pipe: (pipe.score, pipe.area), reverse=True
+        )
 
     def _shape_features(
         self,
@@ -480,8 +550,12 @@ class SlalomDetector:
 
         fill_ratio = float(np.count_nonzero(roi) / (width * height))
         median_width = float(np.median(nonzero_rows))
-        width_spread = float(np.percentile(nonzero_rows, 90) - np.percentile(nonzero_rows, 10))
-        width_stability = float(np.clip(1.0 - width_spread / max(median_width, 1.0), 0.0, 1.0))
+        width_spread = float(
+            np.percentile(nonzero_rows, 90) - np.percentile(nonzero_rows, 10)
+        )
+        width_stability = float(
+            np.clip(1.0 - width_spread / max(median_width, 1.0), 0.0, 1.0)
+        )
 
         vertical_alignment = self._vertical_alignment(contour)
         return fill_ratio, width_stability, vertical_alignment
@@ -516,14 +590,17 @@ class SlalomDetector:
             return float(max(0.0, -np.median(candidate_diff)))
         return float(max(0.0, np.median(candidate_diff)))
 
-    def _choose_red_pipe(self, red_pipes: list[PipeDetection], image_width: int) -> PipeDetection | None:
+    def _choose_red_pipe(
+        self, red_pipes: list[PipeDetection], image_width: int
+    ) -> PipeDetection | None:
         if not red_pipes:
             return None
 
         image_center = image_width / 2
         return max(
             red_pipes,
-            key=lambda pipe: pipe.score - 0.25 * abs(pipe.center_x - image_center) / image_width,
+            key=lambda pipe: pipe.score
+            - 0.25 * abs(pipe.center_x - image_center) / image_width,
         )
 
     def _choose_paired_red_pipe(
@@ -541,7 +618,9 @@ class SlalomDetector:
         plausible = [
             pipe
             for pipe in red_pipes
-            if min_separation <= abs(pipe.center_x - white_pipe.center_x) <= max_separation
+            if min_separation
+            <= abs(pipe.center_x - white_pipe.center_x)
+            <= max_separation
             and pipe.height >= self.config.red_pair_min_height_ratio * image_height
         ]
         if not plausible:
@@ -571,8 +650,12 @@ class SlalomDetector:
         left = [pipe for pipe in white_pipes if pipe.center_x < red_pipe.center_x]
         right = [pipe for pipe in white_pipes if pipe.center_x > red_pipe.center_x]
 
-        left_pipe = max(left, key=lambda pipe: (pipe.score, pipe.center_x), default=None)
-        right_pipe = max(right, key=lambda pipe: (pipe.score, -pipe.center_x), default=None)
+        left_pipe = max(
+            left, key=lambda pipe: (pipe.score, pipe.center_x), default=None
+        )
+        right_pipe = max(
+            right, key=lambda pipe: (pipe.score, -pipe.center_x), default=None
+        )
         return left_pipe, right_pipe
 
     def _choose_white_proxy_pipe(
@@ -586,7 +669,8 @@ class SlalomDetector:
         image_center = image_width / 2
         return max(
             white_pipes,
-            key=lambda pipe: pipe.score - 0.15 * abs(pipe.center_x - image_center) / image_width,
+            key=lambda pipe: pipe.score
+            - 0.15 * abs(pipe.center_x - image_center) / image_width,
         )
 
     def _estimate_target(
@@ -599,9 +683,13 @@ class SlalomDetector:
         right_white_pipe: PipeDetection | None,
     ) -> SlalomEstimate:
         if red_pipe is None:
-            return SlalomEstimate(0.5, 0.5, 0.0, 0.0, None, left_white_pipe, right_white_pipe)
+            return SlalomEstimate(
+                0.5, 0.5, 0.0, 0.0, None, left_white_pipe, right_white_pipe
+            )
 
-        desired_white = left_white_pipe if pass_side == PassSide.LEFT else right_white_pipe
+        desired_white = (
+            left_white_pipe if pass_side == PassSide.LEFT else right_white_pipe
+        )
         fallback_offset = 0.22 * image_width
 
         if desired_white is not None:

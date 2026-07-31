@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-
 from perception.tasks.slalom.classical import PassSide, SlalomDetector
 
 
@@ -101,11 +100,15 @@ def test_white_pole_mode_targets_midpoint_when_dark_red_pair_is_visible() -> Non
     cv2.line(frame, (420, 90), (455, 410), (15, 25, 25), 12)
 
     detector = SlalomDetector()
-    estimate = detector.detect_white_pole_target(frame, target_side=None, method="contrast")
+    estimate = detector.detect_white_pole_target(
+        frame, target_side=None, method="contrast"
+    )
 
     assert estimate.valid
     assert estimate.white_pipe is not None
     assert estimate.red_pipe is not None
 
-    expected_midpoint = (estimate.white_pipe.center_x + estimate.red_pipe.center_x) / 2 / 640
+    expected_midpoint = (
+        (estimate.white_pipe.center_x + estimate.red_pipe.center_x) / 2 / 640
+    )
     assert abs(estimate.target_x - expected_midpoint) < 0.02

@@ -24,9 +24,9 @@ from enum import Enum
 from perception.tasks.slalom.classical.detector import PassSide, SlalomEstimate
 
 # --- Known course geometry (mm), from the design drawing -------------------
-GATE_WIDTH_MM = 1524.0       # white-to-white pipe center distance
-GATE_STAGGER_MM = 1000.0     # lateral offset of middle gate from outer gates
-GATE1_TO_GATE3_MM = 2002.9   # longitudinal spacing, gate 1 to gate 3 centerline
+GATE_WIDTH_MM = 1524.0  # white-to-white pipe center distance
+GATE_STAGGER_MM = 1000.0  # lateral offset of middle gate from outer gates
+GATE1_TO_GATE3_MM = 2002.9  # longitudinal spacing, gate 1 to gate 3 centerline
 
 
 class GateIndex(Enum):
@@ -72,7 +72,9 @@ class SlalomSequenceTracker:
     def estimate_distance_mm(self, estimate: SlalomEstimate) -> float | None:
         if estimate.left_white_pipe is None or estimate.right_white_pipe is None:
             return None
-        pixel_span = abs(estimate.right_white_pipe.center_x - estimate.left_white_pipe.center_x)
+        pixel_span = abs(
+            estimate.right_white_pipe.center_x - estimate.left_white_pipe.center_x
+        )
         if pixel_span <= 0:
             return None
         return (GATE_WIDTH_MM * self.focal_length_px) / pixel_span
@@ -135,7 +137,9 @@ class SlalomSequenceTracker:
     def run_summary(self) -> dict:
         return {
             "gates_passed": self.state.gates_passed,
-            "committed_side": self.state.committed_side.value if self.state.committed_side else None,
+            "committed_side": (
+                self.state.committed_side.value if self.state.committed_side else None
+            ),
             "side_mismatches": self.state.side_mismatches,
             "side_consistent": self.state.side_mismatches == 0,
         }
