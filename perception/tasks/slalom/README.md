@@ -1,6 +1,6 @@
-# urb-slalom
+# slalom
 
-Prototype perception algorithms for RoboSub Task 2: Avoid Debris / Slalom.
+Perception algorithms for RoboSub Task 2: Avoid Debris / Slalom.
 
 The task has three repeated pipe sets arranged as:
 
@@ -10,82 +10,47 @@ WHITE    RED    WHITE
 
 The AUV should navigate through each set while keeping the red pipe on the same side it used when passing the gate, and while staying vertically within the pipe area.
 
-## What This Repo Contains
+## Structure
 
-- A classical OpenCV detector for red and white vertical PVC pipes.
-- A high-level slalom target estimator that converts pipe detections into a steering target.
-- A CLI for testing the detector on images or video.
-- Synthetic unit tests that exercise the core detector without needing pool footage.
-
-This is meant to be a fast iteration sandbox before porting the algorithm into the ROS 2 `cv` package.
-
-## Install
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -e ".[dev]"
+```text
+slalom/
+├── classical/                  # OpenCV detector for red/white vertical PVC pipes (hsv + contrast segmentation)
+├── slalom_sequence_tracker.py  # Multi-gate state across frames: side consistency, distance, and search bias
+├── yolo/                       # Placeholder — no YOLO-based detector exists yet
+└── tests/                      # Synthetic unit tests that exercise the classical detector without pool footage
 ```
 
-## Run On An Image
+`classical/` is ported from the original `urb-slalom` prototype sandbox. That sandbox's CLI and video/GoPro test scripts were not carried over here — this package exposes the detector and tracker as a plain Python API instead.
 
-```bash
-urb-slalom path/to/frame.png --show
+## Usage
+
+```python
+import cv2
+
+from perception.tasks.slalom.classical import PassSide, SlalomDetector
+from perception.tasks.slalom.slalom_sequence_tracker import SlalomSequenceTracker
+
+frame = cv2.imread("path/to/frame.png")
+
+detector = SlalomDetector()
+estimate = detector.detect(frame, pass_side=PassSide.LEFT)
+annotated = detector.annotate(frame, estimate)
+
+# Optional: track gate-passing state across a video's frames
+tracker = SlalomSequenceTracker(focal_length_px=900.0)
+gate_result = tracker.update(estimate, image_width=frame.shape[1])
 ```
 
-Write an annotated result:
+Use `detector.detect_white_pole_target(...)` / `detector.annotate_white_pole(...)` for proxy footage that has a single white pole instead of a full red/white pipe set. Pass `method="contrast"` to `detect(...)` for footage where water attenuation makes the red pipe read as near-black rather than red-hued (see Known Limitation below).
 
-```bash
-urb-slalom path/to/frame.png --output annotated.png
-```
+## Test Data
 
-Use the opposite pass side:
-
-```bash
-urb-slalom path/to/frame.png --red-side left
-```
-
-## Run On A Directory Of Images
-
-Point the CLI at a folder instead of a single file to browse a whole dataset. It prints an estimate per image, and with `--show` pops up a window, pausing on each frame until you press a key (`q`/Esc quits early).
-
-```bash
-# Live popup, one keypress per image
-urb-slalom "Slalom Task/test/images" --show
-
-# Or write annotated copies to inspect later, no popup needed
-urb-slalom "Slalom Task/test/images" --output outputs/annotated_test
-```
-
-`Slalom Task/` is a labeled Roboflow dataset (`train/`, `valid/`, `test/`, each with `images/` + YOLO-format `labels/`, plus `data.yaml` with classes `red`/`white`) — useful for testing detection against real course footage rather than just synthetic frames.
-
-## Test Proxy Footage With One White Pole
-
-If you have course footage that is not true slalom footage, but has a similar vertical white pole, use `white-pole` mode. This mode ignores the full red/white slalom layout and simply places a yellow target dot to the left or right of the detected white pole.
-
-```bash
-mkdir -p outputs
-urb-slalom "GOPR1146 copy.MP4" --mode white-pole --target-side left --output outputs/gopro_white_pole_left.mp4
-```
-
-Or use the helper script:
-
-```bash
-./scripts/test_gopro_white_pole.sh
-```
-
-The annotated output draws:
-
-- a white bounding box around the detected white pole
-- a yellow dot on the requested side of the pole
-- a yellow line from the bottom-center of the frame to the target dot
-
-This is only a proxy test. It is useful for tuning white-pole segmentation and target placement, but it does not validate the full slalom behavior because true slalom needs red and white pipe-set reasoning.
+`Slalom Task/` is a labeled Roboflow dataset (`train/`, `valid/`, `test/`, each with `images/` + YOLO-format `labels/`, plus `data.yaml` with classes `red`/`white`) — useful for testing detection against real course footage rather than just synthetic frames. `crc-photos/` holds additional still frames from pool/tank footage.
 
 ## Run Tests
 
 ```bash
-pytest
+pytest perception/tasks/slalom/tests
 ```
 
 ## Algorithm
