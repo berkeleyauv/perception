@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+# CI installs only the classical dependency group. Torch/YOLO/XFeat testing
+# will land as a separate, non-blocking job once dependency weight and model
+# availability are settled.
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements-classical.txt
+          pip install ruff black
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Format check (black)
+        run: black --check .
+
+  test-classical:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install system deps (OpenCV)
+        run: sudo apt-get install -y libgl1
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements-classical.txt
+          pip install -e .
+
+      - name: Build Cython extension
+        run: |
+          cd perception/tasks/segmentation/saliency_detection
+          python setup.py build_ext --inplace
+
+      - name: Run tests
+        run: pytest -v --tb=short

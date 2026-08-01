@@ -4,10 +4,11 @@ Code Quality [![CodeFactor](https://www.codefactor.io/repository/github/berkeley
 
 ## Installation
 
-We will use Conda for managing environments. We recommend installing Miniconda for Python 3.8 [here](https://docs.conda.io/en/latest/miniconda.html).
+We will use Conda for managing environments. We recommend installing Miniconda for Python 3.11 [here](https://docs.conda.io/en/latest/miniconda.html).
+Python 3.11 is required to support YOLO models.
 Then create an environment with
 
-    conda create -n urobotics python=3.8
+    conda create -n urobotics python=3.11
 
 activate it with
 
@@ -22,9 +23,13 @@ Change into the cloned repo directory and install it
     pip3 install -e ./
 
 
-Install all dependencies with
+Install dependencies with
 
-    pip3 install -r requirements.txt
+    pip3 install -r requirements-classical.txt
+
+If you also need YOLO/torch-based models, install the torch group instead (it includes everything in `requirements-classical.txt`, plus `torch`, `torchvision`, and `ultralytics`)
+
+    pip3 install -r requirements-torch.txt
 
 
 Also, our training data is stored here https://www.dropbox.com/sh/rrbfqfutrmifrxs/AAAfXxlcCtWZmUELp4wXyTIxa?dl=0 so download it and unzip it in the same folder as `perception`.

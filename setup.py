@@ -13,5 +13,5 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
-    python_requires='>=3.7',
+    python_requires='>=3.11',
 )
