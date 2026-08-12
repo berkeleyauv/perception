@@ -6,8 +6,8 @@ import perception.tasks.gate.classical.GateSegmentationAlgoC as GateSegC
 import perception.tasks.segmentation.saliency_detection.MBD as MBD
 from perception.tasks.segmentation.COMB_SAL_BG import COMB_SAL_BG
 import perception.vis.TestTasks.BackgroundRemoval as BackgroundRemoval
-import perception.tasks.roulette.color_detection as RouletteColorDetector
-from perception.tasks.dice.DiceDetector import DiceDetector
+import perception.tasks._archive.roulette.color_detection as RouletteColorDetector
+from perception.tasks._archive.dice.DiceDetector import DiceDetector
 
 ALGOS = {
     'test': TestAlgo.TestAlgo,
