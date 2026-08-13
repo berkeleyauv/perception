@@ -1,12 +1,15 @@
-from perception.tasks.TaskPerceiver import TaskPerceiver
-from typing import Tuple
 from collections import namedtuple
+from typing import Tuple
 
-from perception.tasks.segmentation.combinedFilter import init_combined_filter
-import numpy as np
 import cv2 as cv
+import numpy as np
+
+from perception.tasks.registry import register_perceiver
+from perception.tasks.segmentation.combinedFilter import init_combined_filter
+from perception.tasks.TaskPerceiver import TaskPerceiver
 
 
+@register_perceiver(task="gate", algo="segmentation_c")
 class GateSegmentationAlgoC(TaskPerceiver):
     __past_centers = []
     __ema = None

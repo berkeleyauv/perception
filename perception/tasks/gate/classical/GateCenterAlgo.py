@@ -1,15 +1,18 @@
+import math
+import statistics
+from collections import namedtuple
+
+import cv2 as cv
+import numpy as np
+
 from perception.tasks.gate.classical.GateSegmentationAlgoA import (
     GateSegmentationAlgoA,
 )
+from perception.tasks.registry import register_perceiver
 from perception.tasks.TaskPerceiver import TaskPerceiver
-from collections import namedtuple
-
-import numpy as np
-import math
-import cv2 as cv
-import statistics
 
 
+@register_perceiver(task="gate", algo="center")
 class GateCenterAlgo(TaskPerceiver):
     center_x_locs, center_y_locs = [], []
     output_class = namedtuple("GateOutput", ["centerx", "centery"])
