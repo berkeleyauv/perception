@@ -10,13 +10,14 @@ from perception.vis.FrameWrapper import FrameWrapper
 from perception.vis.Visualizer import Visualizer
 
 
-def run(data_sources, algorithm, save_video=False):
+def run(data_sources, algorithm, save_video=False, resize=0.15):
     out = None
     window_builder = Visualizer(algorithm.kwargs)
-    data = FrameWrapper(data_sources, 0.15)
+    data = FrameWrapper(data_sources, resize)
     frame_count = 0
     speed = 1
 
+    quit_requested = False
     for frame in data:
         if frame_count % speed == 0:
             if algorithm.kwargs:
@@ -35,6 +36,7 @@ def run(data_sources, algorithm, save_video=False):
 
         key = cv.waitKey(30)
         if key == ord('q') or key == 27:
+            quit_requested = True
             break
         if key == ord('p'):
             cv.waitKey(0)  # pause
@@ -47,6 +49,17 @@ def run(data_sources, algorithm, save_video=False):
             print(f'speed {speed}')
 
 
+    if frame_count > 0 and not quit_requested:
+        # Hold the last frame open until a key is pressed instead of tearing the
+        # window down instantly - matters for single-image input, which would
+        # otherwise flash on screen for one 30ms waitKey and vanish. Skipped if
+        # the user already pressed q/Esc to quit, since that's an explicit exit.
+        # Poll in short bursts rather than a single blocking waitKey(0): a fully
+        # blocking waitKey() doesn't return control to Python until a key is
+        # pressed in the window, which also blocks Ctrl-C (SIGINT) from being
+        # handled until then.
+        while cv.waitKey(30) == -1:
+            pass
     cv.destroyAllWindows()
     if out:
         out.close()
@@ -73,6 +86,12 @@ if __name__ == '__main__':
     parser.add_argument('--algo', type=str, required=True, help='e.g. classical')
     parser.add_argument('--profile', default=None, type=str)
     parser.add_argument('--save_video', action='store_true')
+    parser.add_argument(
+        "--resize",
+        default=1.0,
+        type=float,
+        help="Scale factor applied to every frame before display (default: 1.0, no resize).",
+    )
     args = parser.parse_args()
 
     # Discover every @register_perceiver in perception.tasks, then look up the
@@ -97,6 +116,8 @@ if __name__ == '__main__':
         data_sources = [args.data]
 
     if args.profile is None:
-        run(data_sources, algorithm, args.save_video)
+        run(data_sources, algorithm, args.save_video, args.resize)
     else:
-        profile(data_sources, algorithm, args.save_video, stats=args.profile)
+        profile(
+            data_sources, algorithm, args.save_video, args.resize, stats=args.profile
+        )
