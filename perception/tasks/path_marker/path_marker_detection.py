@@ -1,11 +1,11 @@
-from perception.tasks.segmentation.combinedFilter import init_combined_filter
 from typing import Union
 
-# TODO: port to vis + TaskPerciever format or remove
+import cv2
+import numpy as np
+
+from perception.tasks.segmentation.combinedFilter import init_combined_filter
 
 if __name__ == "__main__":
-    import numpy as np
-    import cv2
     from sys import argv as args
 
     # Data fron the new course footage dropbox folder
@@ -29,11 +29,11 @@ def thresh_by_contour_size(
 
     frame = np.array(frame, np.uint8)
 
-    img, contours, hierarchy = cv2.findContours(
+    contours, hierarchy = cv2.findContours(
         frame, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
     )
     if contours is not None:
-        contours.sort(key=cv2.contourArea, reverse=True)
+        contours = sorted(contours, key=cv2.contourArea, reverse=True)
         contours = contours[:num_contours]
 
         threshed = np.zeros(frame.shape, np.uint8)

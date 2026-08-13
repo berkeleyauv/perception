@@ -1,12 +1,13 @@
 import argparse
+import cProfile
 import os
 
-from perception import ALGOS
-from perception.vis.FrameWrapper import FrameWrapper
 import cv2 as cv
-from perception.vis.Visualizer import Visualizer
-import cProfile
 import imageio
+
+from perception.tasks import registry
+from perception.vis.FrameWrapper import FrameWrapper
+from perception.vis.Visualizer import Visualizer
 
 
 def run(data_sources, algorithm, save_video=False):
@@ -66,13 +67,26 @@ if __name__ == '__main__':
     # Parse arguments
     parser = argparse.ArgumentParser(description='Visualizes perception algorithms.')
     parser.add_argument('--data', default='webcam', type=str)
-    parser.add_argument('--algorithm', type=str, required=True)
+    parser.add_argument(
+        '--task', type=str, required=True, help='e.g. slalom, gate, path_marker'
+    )
+    parser.add_argument('--algo', type=str, required=True, help='e.g. classical')
     parser.add_argument('--profile', default=None, type=str)
     parser.add_argument('--save_video', action='store_true')
     args = parser.parse_args()
 
-    # Get algorithm class and init
-    algorithm = ALGOS[args.algorithm]()
+    # Discover every @register_perceiver in perception.tasks, then look up the
+    # requested one. No shared file needs hand-editing to add a new algorithm.
+    registry.discover_all()
+    try:
+        algorithm = registry.get_perceiver(args.task, args.algo)()
+    except KeyError as exc:
+        available = ", ".join(
+            f"{task}/{algo}"
+            for task in registry.list_tasks()
+            for algo in registry.list_algos(task)
+        )
+        raise SystemExit(f"{exc}. Available: {available}") from None
 
     # Initialize image source
     # detects args.data, get a list of all file directory when given a directory
