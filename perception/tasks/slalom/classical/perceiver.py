@@ -41,7 +41,11 @@ class SlalomClassicalPerceiver(TaskPerceiver):
 
         if debug:
             annotated = self.detector.annotate(frame, estimate)
-            return result, [annotated]
+            if self.method == "contrast":
+                red_mask, white_mask = self.detector.segment_contrast(frame)
+            else:
+                red_mask, white_mask = self.detector.segment(frame)
+            return result, [annotated, red_mask, white_mask]
         return result
 
 

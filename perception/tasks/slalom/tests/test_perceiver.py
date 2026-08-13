@@ -24,14 +24,29 @@ def test_analyze_without_debug_returns_flat_output() -> None:
     assert result.confidence > 0.8
 
 
-def test_analyze_with_debug_returns_annotated_frame_same_size() -> None:
+def test_analyze_with_debug_returns_annotated_frame_and_masks() -> None:
     frame = make_frame()
     perceiver = SlalomClassicalPerceiver(pass_side=PassSide.LEFT)
     result, debug_frames = perceiver.analyze(frame, debug=True, slider_vals=None)
 
     assert result.confidence > 0.8
-    assert len(debug_frames) == 1
-    assert debug_frames[0].shape == frame.shape
+    assert len(debug_frames) == 3
+
+    annotated, red_mask, white_mask = debug_frames
+    assert annotated.shape == frame.shape
+    assert red_mask.shape == frame.shape[:2]
+    assert white_mask.shape == frame.shape[:2]
+
+
+def test_analyze_with_debug_contrast_method_returns_contrast_masks() -> None:
+    frame = make_frame()
+    perceiver = SlalomClassicalPerceiver(pass_side=PassSide.LEFT, method="contrast")
+    _, debug_frames = perceiver.analyze(frame, debug=True, slider_vals=None)
+
+    assert len(debug_frames) == 3
+    _, red_mask, white_mask = debug_frames
+    assert red_mask.shape == frame.shape[:2]
+    assert white_mask.shape == frame.shape[:2]
 
 
 def test_right_pass_side_targets_right_of_red_pipe() -> None:
