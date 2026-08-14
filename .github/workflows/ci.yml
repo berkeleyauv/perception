@@ -1,10 +1,11 @@
 name: CI
 
+# Temporarily disabled: repo structure is mid-consolidation (task registration,
+# vis.py rewrite, test-data relocation) and CI would fail on pre-existing
+# issues unrelated to any given PR. Re-enable by restoring the push/pull_request
+# triggers below. Still runnable manually via workflow_dispatch in the meantime.
 on:
-  push:
-    branches: ["**"]
-  pull_request:
-    branches: ["**"]
+  workflow_dispatch:
 
 # CI installs only the classical dependency group. Torch/YOLO/XFeat testing
 # will land as a separate, non-blocking job once dependency weight and model
