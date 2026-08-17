@@ -1,6 +1,7 @@
 import argparse
 import cProfile
 import os
+import sys
 
 import cv2 as cv
 import imageio
@@ -9,6 +10,22 @@ import numpy as np
 from perception.tasks import registry
 from perception.vis.FrameWrapper import FrameWrapper
 from perception.vis.Visualizer import Visualizer
+
+
+def _colorize(text, code, stream):
+    # Skip escape codes when the stream isn't a terminal (piped/redirected
+    # output, log files) - raw codes there would just show up as garbage.
+    if not stream.isatty():
+        return text
+    return f"\033[{code}m{text}\033[0m"
+
+
+def _yellow(text):
+    return _colorize(text, "33", sys.stdout)
+
+
+def _red(text):
+    return _colorize(text, "31", sys.stderr)
 
 
 def _analyze(algorithm, window_builder, frame):
@@ -168,8 +185,8 @@ if __name__ == '__main__':
         try:
             algo_name = registry.get_default_algo(args.task)
         except KeyError as exc:
-            raise SystemExit(f"{exc}. Pass --algo explicitly.") from None
-        print(f"No --algo given, using default for task {args.task!r}: {algo_name}")
+            raise SystemExit(_red(f"{exc}. Pass --algo explicitly.")) from None
+        print(_yellow(f"No --algo given, using default for task {args.task!r}: {algo_name}"))
 
     try:
         algorithm = registry.get_perceiver(args.task, algo_name)()
@@ -179,7 +196,7 @@ if __name__ == '__main__':
             for task in registry.list_tasks()
             for algo in registry.list_algos(task)
         )
-        raise SystemExit(f"{exc}. Available: {available}") from None
+        raise SystemExit(_red(f"{exc}. Available: {available}")) from None
 
     compare_algorithm = None
     if args.compare is not None:
@@ -188,7 +205,7 @@ if __name__ == '__main__':
         except KeyError as exc:
             available = ", ".join(registry.list_algos(args.task))
             raise SystemExit(
-                f"{exc}. Available algos for task {args.task!r}: {available}"
+                _red(f"{exc}. Available algos for task {args.task!r}: {available}")
             ) from None
 
     # Initialize image source
