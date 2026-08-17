@@ -8,14 +8,23 @@ def nothing(x):
 	pass
 
 class Visualizer:
-	def __init__(self, kwargs: Dict[str, Tuple[Tuple[int, int], int]]):
+	def __init__(self, kwargs: Dict[str, Tuple[Tuple[int, int], int]], window_name: str = 'Debug Frames', label: str = None):
+		"""
+		label: when set, prefixes this instance's trackbar names with it (e.g.
+		"center: canny_low"). Needed when two Visualizers share a window_name
+		(compare mode) so trackbars for the same variable name in two
+		different algos don't collide.
+		"""
 		self.variables = kwargs.keys()
-		cv.namedWindow('Debug Frames')
+		self.window_name = window_name
+		self._trackbar_names = {name: (f'{label}: {name}' if label else name) for name in self.variables}
+		cv.namedWindow(self.window_name)
 		for name, info in kwargs.items():
 			slider_range, default_val = info
 			low_range, high_range = slider_range
-			cv.createTrackbar(name, 'Debug Frames', low_range, high_range, nothing)
-			cv.setTrackbarPos(name, 'Debug Frames', default_val)
+			trackbar_name = self._trackbar_names[name]
+			cv.createTrackbar(trackbar_name, self.window_name, low_range, high_range, nothing)
+			cv.setTrackbarPos(trackbar_name, self.window_name, default_val)
 
 	def three_stack(self, frames: List[np.ndarray]) -> List[np.ndarray]:
 		newLst = []
@@ -75,5 +84,5 @@ class Visualizer:
 	def update_vars(self) -> Dict[str, int]:
 		variable_values = {}
 		for var in self.variables:
-			variable_values[var] = cv.getTrackbarPos(var, 'Debug Frames')
+			variable_values[var] = cv.getTrackbarPos(self._trackbar_names[var], self.window_name)
 		return variable_values

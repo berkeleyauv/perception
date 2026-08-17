@@ -4,38 +4,42 @@ Code Quality [![CodeFactor](https://www.codefactor.io/repository/github/berkeley
 
 ## Installation
 
-We will use Conda for managing environments. We recommend installing Miniconda for Python 3.11 [here](https://docs.conda.io/en/latest/miniconda.html).
-Python 3.11 is required to support YOLO models.
-Then create an environment with
+We use [uv](https://docs.astral.sh/uv/) for managing both the Python version and the virtual environment. Install it once per machine:
 
-    conda create -n urobotics python=3.11
+    curl -LsSf https://astral.sh/uv/install.sh | sh
 
-activate it with
+(or `brew install uv` on macOS). Full install docs [here](https://docs.astral.sh/uv/getting-started/installation/).
 
-    conda activate urobotics
-
-Then clone the repo in a directory of your choice
+Clone the repo in a directory of your choice
 
     git clone https://github.com/berkeleyauv/perception.git
+    cd perception
 
-Change into the cloned repo directory and install it
+Create the virtual environment — this downloads and pins Python 3.11 (required to support YOLO models) if you don't already have it, and creates `.venv/` in the repo:
 
-    pip3 install -e ./
+    uv venv --python 3.11
 
+Activate it
+
+    source .venv/bin/activate
+
+Install the package in editable mode
+
+    uv pip install -e .
 
 Install dependencies with
 
-    pip3 install -r requirements-classical.txt
+    uv pip install -r requirements-classical.txt
 
 If you also need YOLO/torch-based models, install the torch group instead (it includes everything in `requirements-classical.txt`, plus `torch`, `torchvision`, and `ultralytics`)
 
-    pip3 install -r requirements-torch.txt
+    uv pip install -r requirements-torch.txt
 
 
 Also, our training data is stored here https://www.dropbox.com/sh/rrbfqfutrmifrxs/AAAfXxlcCtWZmUELp4wXyTIxa?dl=0 so download it and unzip it in the same folder as `perception`.
 
 ### Cython
-To compile cythonized code, run the following commands after `cd`ing into the folder with Cython `setup.py`
+To compile cythonized code, run the following commands (with the venv activated) after `cd`ing into the folder with Cython `setup.py`
 
     python setup.py build_ext --inplace
     cythonize file_to_cythonize.pyx
@@ -45,46 +49,44 @@ To compile cythonized code, run the following commands after `cd`ing into the fo
 Misc code, camera calibration etc.
 
 ## tasks:
-Code for specific tasks like 
+Code for specific competition tasks, one folder per task:
 
-1. cross: cross detection
-2. segmentation:
-3. path_marker: path_marker detection
-4. spinny_wheel_detection
-
-etc
+1. `gate`: qualification gate detection (`classical/`) and orientation estimation (`orientation/`)
+2. `slalom`: slalom pipe-set detection (`classical/`) and pipe-set sequence tracking (`slalom_sequence_tracker.py`)
+3. `path_marker`: path marker detection
+4. `buoy`, `torpedo`, `octagon`: scaffolded, no detection logic yet
+5. `_archive`: retired tasks (cross, dice, roulette, slots) kept for reference, excluded from registry discovery
 
 In order to create your own algorithm to test:
 
-1. Create <your_algo>.py and put it in one of the specific task folders in perception/tasks.
+1. Create `<your_algo>.py` and put it in the relevant task folder under `perception/tasks/` (e.g. a new classical approach goes in that task's `classical/`).
 
-2. Create a class which extends the TaskPerceiver class. perception/tasks/TaskPerceiver.py includes a template with documentation for how to do this.
+2. Create a class which extends `TaskPerceiver` (see `perception/tasks/TaskPerceiver.py` for the template with documentation) and decorate it with `@register_perceiver(task=..., algo=...)` from `perception/tasks/registry.py`. This is what makes it discoverable by `vis.py` — see the **vis** section below.
 
 ## vis:
-Visualization tools 
-Code for testing tasks (Ideally this should be placed a separate folder called `tests`).
+Visualization tools for interactively running and debugging task algorithms.
 
-After writing the code for your specific task algorithm, you can do one of two things:
+Every algorithm is a `TaskPerceiver` subclass (see `perception/tasks/TaskPerceiver.py`) decorated with `@register_perceiver(task=..., algo=...)`. Decorating a class is all that's needed to make it discoverable — there's no shared file to hand-edit:
 
-1. Add this to the end of <your algorithm>.py file:
-    
-        if __name__ == '__main__':
-            from perception.vis.vis import run
-            run(<list of file/directory names>, <new instance of your class>, <save your video?>)
-    and then run
-    
-        python <your algorithm>.py
-2. Add this to the perception/__init__.py file:
+    from perception.tasks.registry import register_perceiver
+    from perception.tasks.TaskPerceiver import TaskPerceiver
 
-        import <path to your module>
-        
-        ALGOS = {
-            'custom_name': <your module>.<your class reference>
-        }
-    and then run
-    
-        python perception/vis/vis.py --algorithm custom_name [--data <path to file/directory>] [--profile <function name>] [--save_video]
-    The **algorithm** parameter is required. If **data** isn't specified, it'll default to your webcam. If **profile** isn't specified, it will be off by default. Add the **save_video** tag if you want to save your vis test as an mp4 file.
+    @register_perceiver(task="gate", algo="my_algo")
+    class MyAlgo(TaskPerceiver):
+        ...
+
+Then run it with:
+
+    python -m perception.vis.vis --task gate --algo my_algo [--data <path to file/directory>] [--profile <function name>] [--save_video] [--resize <scale>]
+
+- `--task` / `--algo` are required and select the registered perceiver to run.
+- `--data` defaults to your webcam; point it at an image, video, or a directory of either.
+- `--profile` is off by default; pass a `cProfile` stats key (or omit for `'all'`) to profile the run.
+- `--save_video` writes the debug-frame grid to `vis_rec.mp4`.
+- `--resize` scales every frame before display (default `1.0`, no resize).
+- `--compare <algo>` runs a second algo for the same `--task` on the same frames and stacks it below the primary algo's grid in one "Debug Frames" window, each half labeled with its algo name in the top-left corner — useful for A/B'ing two algorithms (e.g. `center` vs. `segmentation_a` for `gate`) against the same footage. Stacking below (rather than beside) keeps each pane's width unchanged, so sub-frame resolution and label/slider text stay legible regardless of how many debug frames either algo returns. Sliders for both algos appear in the same window, prefixed with their algo name (e.g. `center: canny_low`) to keep them distinguishable. `--save_video` saves the combined, labeled view.
+
+While a window is focused: `q`/`Esc` quits, `p` pauses, `i`/`o` slow down/speed up frame playback.
 
 ## wiki:
 Flowchart on TaskPerceiver, TaskReceiver, AlgorithmRunner.
