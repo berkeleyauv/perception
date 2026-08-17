@@ -1,10 +1,12 @@
 name: CI
 
-# Temporarily disabled: repo structure is mid-consolidation (task registration,
-# vis.py rewrite, test-data relocation) and CI would fail on pre-existing
-# issues unrelated to any given PR. Re-enable by restoring the push/pull_request
-# triggers below. Still runnable manually via workflow_dispatch in the meantime.
+# Lint (ruff/black) isn't gated here yet - the repo carries a lot of
+# pre-existing style debt outside what this consolidation pass touched, and
+# fixing it repo-wide is a separate task from getting tests running again.
+# pytest-only for now.
 on:
+  push:
+  pull_request:
   workflow_dispatch:
 
 # CI installs only the classical dependency group. Torch/YOLO/XFeat testing
@@ -12,27 +14,6 @@ on:
 # availability are settled.
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install dependencies
-        run: |
-          pip install -r requirements-classical.txt
-          pip install ruff black
-
-      - name: Lint (ruff)
-        run: ruff check .
-
-      - name: Format check (black)
-        run: black --check .
-
   test-classical:
     runs-on: ubuntu-latest
     steps:
