@@ -22,10 +22,15 @@ import warnings
 from perception.tasks.TaskPerceiver import TaskPerceiver
 
 _REGISTRY: dict[tuple[str, str], type[TaskPerceiver]] = {}
+_DEFAULTS: dict[str, str] = {}
 
 
-def register_perceiver(task: str, algo: str):
-    """Class decorator: register a TaskPerceiver subclass under (task, algo)."""
+def register_perceiver(task: str, algo: str, default: bool = False):
+    """Class decorator: register a TaskPerceiver subclass under (task, algo).
+
+    Pass default=True to make this the algo get_default_algo() returns for
+    `task` when a caller (e.g. the vis CLI) doesn't specify one explicitly.
+    """
 
     def decorator(cls: type[TaskPerceiver]) -> type[TaskPerceiver]:
         key = (task, algo)
@@ -37,6 +42,14 @@ def register_perceiver(task: str, algo: str):
                 f"register {cls.__module__}.{cls.__qualname__}"
             )
         _REGISTRY[key] = cls
+        if default:
+            existing_default = _DEFAULTS.get(task)
+            if existing_default is not None and existing_default != algo:
+                raise ValueError(
+                    f"task={task!r} already has default algo {existing_default!r}, "
+                    f"cannot also mark {algo!r} as default"
+                )
+            _DEFAULTS[task] = algo
         return cls
 
     return decorator
@@ -60,6 +73,22 @@ def list_tasks() -> list[str]:
 def list_algos(task: str) -> list[str]:
     """All algo names registered for a given task."""
     return sorted(algo for t, algo in _REGISTRY if t == task)
+
+
+def get_default_algo(task: str) -> str:
+    """The default algo for a task: whichever was marked default=True, or the
+    sole registered algo if the task only has one. Raises KeyError if neither
+    applies, i.e. the caller must specify an algo explicitly.
+    """
+    explicit = _DEFAULTS.get(task)
+    if explicit is not None:
+        return explicit
+    algos = list_algos(task)
+    if len(algos) == 1:
+        return algos[0]
+    raise KeyError(
+        f"no default algo for task={task!r} (algos: {', '.join(algos) or 'none registered'})"
+    )
 
 
 _EXCLUDED_PACKAGES = ("perception.tasks._archive",)

@@ -46,7 +46,7 @@ def _stack_compare(primary, compare):
 
 
 def run(data_sources, algorithm, save_video=False, resize=0.15, compare_algorithm=None,
-        algo_label=None, compare_label=None):
+        algo_label=None, compare_label=None, show_labels=True):
     out = None
     window_name = 'Debug Frames'
     compare_mode = compare_algorithm is not None
@@ -66,10 +66,10 @@ def run(data_sources, algorithm, save_video=False, resize=0.15, compare_algorith
             _, to_show = _analyze(algorithm, window_builder, frame)
             if compare_mode:
                 _, compare_to_show = _analyze(compare_algorithm, compare_window_builder, frame)
-                to_show = _stack_compare(
-                    _label_frame(to_show, algo_label or 'primary'),
-                    _label_frame(compare_to_show, compare_label or 'compare'),
-                )
+                if show_labels:
+                    to_show = _label_frame(to_show, algo_label or 'primary')
+                    compare_to_show = _label_frame(compare_to_show, compare_label or 'compare')
+                to_show = _stack_compare(to_show, compare_to_show)
             cv.imshow(window_name, to_show)
 
             if save_video:
@@ -127,7 +127,13 @@ if __name__ == '__main__':
     parser.add_argument(
         '--task', type=str, required=True, help='e.g. slalom, gate, path_marker'
     )
-    parser.add_argument('--algo', type=str, required=True, help='e.g. classical')
+    parser.add_argument(
+        '--algo',
+        default=None,
+        type=str,
+        help='e.g. classical. If omitted, uses the task\'s default algo '
+             '(its sole registered algo, or whichever was marked default=True).',
+    )
     parser.add_argument(
         '--compare',
         default=None,
@@ -140,6 +146,12 @@ if __name__ == '__main__':
     parser.add_argument('--profile', default=None, type=str)
     parser.add_argument('--save_video', action='store_true')
     parser.add_argument(
+        '--hide_labels',
+        action='store_true',
+        help='Hide the corner labels that identify each pane in --compare mode '
+             '(shown by default).',
+    )
+    parser.add_argument(
         "--resize",
         default=1.0,
         type=float,
@@ -150,8 +162,17 @@ if __name__ == '__main__':
     # Discover every @register_perceiver in perception.tasks, then look up the
     # requested one. No shared file needs hand-editing to add a new algorithm.
     registry.discover_all()
+
+    algo_name = args.algo
+    if algo_name is None:
+        try:
+            algo_name = registry.get_default_algo(args.task)
+        except KeyError as exc:
+            raise SystemExit(f"{exc}. Pass --algo explicitly.") from None
+        print(f"No --algo given, using default for task {args.task!r}: {algo_name}")
+
     try:
-        algorithm = registry.get_perceiver(args.task, args.algo)()
+        algorithm = registry.get_perceiver(args.task, algo_name)()
     except KeyError as exc:
         available = ", ".join(
             f"{task}/{algo}"
@@ -181,11 +202,11 @@ if __name__ == '__main__':
     if args.profile is None:
         run(
             data_sources, algorithm, args.save_video, args.resize, compare_algorithm,
-            algo_label=args.algo, compare_label=args.compare,
+            algo_label=algo_name, compare_label=args.compare, show_labels=not args.hide_labels,
         )
     else:
         profile(
             data_sources, algorithm, args.save_video, args.resize, compare_algorithm,
-            algo_label=args.algo, compare_label=args.compare,
+            algo_label=algo_name, compare_label=args.compare, show_labels=not args.hide_labels,
             stats=args.profile,
         )
