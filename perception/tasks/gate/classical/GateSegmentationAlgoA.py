@@ -8,15 +8,14 @@ from perception.tasks.segmentation.combinedFilter import init_combined_filter
 from perception.tasks.TaskPerceiver import TaskPerceiver
 
 
-@register_perceiver(task="gate", algo="segmentation_a")
+@register_perceiver(task="gate", algo="segmentation_a", default=True)
 class GateSegmentationAlgoA(TaskPerceiver):
     center_x_locs, center_y_locs = [], []
     
     def __init__(self):
         super().__init__()
         self.combined_filter = init_combined_filter()
-
-    # TODO: fix return typing
+    
     def analyze(self, frame: np.ndarray, debug: bool, slider_vals=None) -> Tuple[float, float]:
         """Takes in the background removed image and returns the center between
         the two gate posts.

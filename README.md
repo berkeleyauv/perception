@@ -63,6 +63,8 @@ In order to create your own algorithm to test:
 
 2. Create a class which extends `TaskPerceiver` (see `perception/tasks/TaskPerceiver.py` for the template with documentation) and decorate it with `@register_perceiver(task=..., algo=...)` from `perception/tasks/registry.py`. This is what makes it discoverable by `vis.py` — see the **vis** section below.
 
+3. Pass `default=True` to `@register_perceiver` if this should be the algo `vis.py` runs for its task when `--algo` is omitted. A task with only one registered algo defaults to it automatically; a task with several needs one of them explicitly marked (currently `segmentation_a` for `gate`, and the sole algo for `slalom`/`path_marker`). Registering a second `default=True` algo for the same task raises an error.
+
 ## vis:
 Visualization tools for interactively running and debugging task algorithms.
 
@@ -77,14 +79,16 @@ Every algorithm is a `TaskPerceiver` subclass (see `perception/tasks/TaskPerceiv
 
 Then run it with:
 
-    python -m perception.vis.vis --task gate --algo my_algo [--data <path to file/directory>] [--profile <function name>] [--save_video] [--resize <scale>]
+    python -m perception.vis.vis --task gate [--algo my_algo] [--data <path to file/directory>] [--profile <function name>] [--save_video] [--resize <scale>] [--compare <algo>] [--hide_labels]
 
-- `--task` / `--algo` are required and select the registered perceiver to run.
+- `--task` is required and selects which task's perceivers to run.
+- `--algo` is optional — omit it to use the task's default algo (see point 3 above); `vis.py` prints which algo it picked. If the task has no default set, it errors and asks you to pass `--algo` explicitly.
 - `--data` defaults to your webcam; point it at an image, video, or a directory of either.
 - `--profile` is off by default; pass a `cProfile` stats key (or omit for `'all'`) to profile the run.
 - `--save_video` writes the debug-frame grid to `vis_rec.mp4`.
 - `--resize` scales every frame before display (default `1.0`, no resize).
 - `--compare <algo>` runs a second algo for the same `--task` on the same frames and stacks it below the primary algo's grid in one "Debug Frames" window, each half labeled with its algo name in the top-left corner — useful for A/B'ing two algorithms (e.g. `center` vs. `segmentation_a` for `gate`) against the same footage. Stacking below (rather than beside) keeps each pane's width unchanged, so sub-frame resolution and label/slider text stay legible regardless of how many debug frames either algo returns. Sliders for both algos appear in the same window, prefixed with their algo name (e.g. `center: canny_low`) to keep them distinguishable. `--save_video` saves the combined, labeled view.
+- `--hide_labels` drops the corner labels in `--compare` mode (shown by default).
 
 While a window is focused: `q`/`Esc` quits, `p` pauses, `i`/`o` slow down/speed up frame playback.
 
