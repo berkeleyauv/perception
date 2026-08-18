@@ -1,6 +1,8 @@
 *.MP4
 *.mp4
 *.avi
+*.png
+*.jpg
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -23,3 +25,6 @@ build/
 .vscode/
 
 data/
+
+# uv-managed virtual environment
+.venv/
